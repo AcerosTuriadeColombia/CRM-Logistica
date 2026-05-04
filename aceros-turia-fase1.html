@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aceros Turia · Fase 1 — Programación del día</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #181c27;
+  --surface2: #1e2333;
+  --surface3: #252c3f;
+  --accent: #f97316;
+  --accent2: #fb923c;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --blue: #60a5fa;
+  --text: #eef0f6;
+  --text-dim: #7c8499;
+  --border: rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ---- HEADER ---- */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: 3px;
+  color: var(--accent);
+}
+.logo em { color: var(--text); font-style: normal; }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.phase-tag {
+  background: rgba(249,115,22,0.12);
+  border: 1px solid rgba(249,115,22,0.3);
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* ---- MAIN LAYOUT ---- */
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+/* ---- UPLOAD AREA ---- */
+.upload-section { margin-bottom: 2rem; }
+
+.drop-zone {
+  border: 2px dashed rgba(249,115,22,0.3);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(249,115,22,0.04) 0%, rgba(251,146,60,0.02) 100%);
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.drop-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 20px,
+    rgba(249,115,22,0.015) 20px,
+    rgba(249,115,22,0.015) 21px
+  );
+}
+
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(249,115,22,0.08) 0%, rgba(251,146,60,0.04) 100%);
+}
+
+.drop-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.drop-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.drop-sub {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 1.5rem;
+}
+
+.drop-sub strong { color: var(--accent); }
+
+.btn {
+  padding: 0.55rem 1.4rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s;
+  font-family: 'Sora', sans-serif;
+}
+
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: #ea6c0a; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(249,115,22,0.3); }
+.btn-ghost { background: var(--surface3); color: var(--text); border: 1px solid var(--border2); }
+.btn-ghost:hover { background: var(--surface2); }
+.btn-green { background: var(--green); color: white; }
+.btn-green:hover { background: #16a34a; transform: translateY(-1px); }
+.btn-sm { padding: 0.38rem 0.9rem; font-size: 0.75rem; }
+
+#file-input { display: none; }
+
+/* ---- COLUMNS GUIDE ---- */
+.columns-guide {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
+.col-tag {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-dim);
+}
+
+/* ---- STATS ROW ---- */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: all 0.4s ease;
+}
+
+.stats-row.visible { opacity: 1; transform: translateY(0); }
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem;
+}
+
+.stat-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.stat-sub { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; }
+
+/* ---- SECTION ---- */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+}
+
+/* ---- SEARCH ---- */
+.toolbar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-family: 'Sora', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--text-dim); }
+
+/* ---- VEHICLE CARDS ---- */
+.vehicles-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  opacity: 0;
+  transition: opacity 0.4s ease 0.1s;
+}
+
+.vehicles-grid.visible { opacity: 1; }
+
+.vehicle-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.vehicle-card:hover { border-color: rgba(249,115,22,0.25); }
+
+.vehicle-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.vehicle-icon {
+  width: 40px; height: 40px;
+  background: rgba(249,115,22,0.12);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.vehicle-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  color: var(--accent);
+  flex: 1;
+}
+
+.vehicle-meta {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+
+.vehicle-stats {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.vs-item { text-align: right; }
+.vs-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.vs-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; }
+
+.chevron {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  transition: transform 0.25s;
+  margin-left: 0.5rem;
+}
+
+.vehicle-card.open .chevron { transform: rotate(180deg); }
+
+/* STATUS SELECT */
+.status-select {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: 'Sora', sans-serif;
+  padding: 4px 10px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.status-select:focus { border-color: var(--accent); }
+
+/* ---- ORDERS TABLE ---- */
+.orders-wrap {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+
+.vehicle-card.open .orders-wrap { max-height: 1000px; }
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.orders-table th {
+  padding: 0.65rem 1rem;
+  text-align: left;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  background: rgba(0,0,0,0.15);
+  font-weight: 600;
+}
+
+.orders-table td {
+  padding: 0.85rem 1rem;
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.orders-table tr:hover td { background: rgba(255,255,255,0.015); }
+
+.order-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.client-name { font-weight: 600; font-size: 0.82rem; }
+.client-vendor { font-size: 0.7rem; color: var(--text-dim); margin-top: 1px; }
+
+.product-name { font-size: 0.78rem; }
+.product-detail { font-size: 0.68rem; color: var(--text-dim); margin-top: 1px; font-family: 'JetBrains Mono', monospace; }
+
+.city-badge {
+  background: var(--surface3);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.kg-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---- SUBTOTAL ROW ---- */
+.subtotal-row td {
+  background: rgba(249,115,22,0.06) !important;
+  border-top: 1px solid rgba(249,115,22,0.15) !important;
+}
+
+/* ---- VEHICLE TOTAL ROW ---- */
+.vehicle-footer {
+  padding: 0.75rem 1.25rem;
+  background: rgba(0,0,0,0.1);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+}
+
+.total-label { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.total-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ---- EMPTY STATE ---- */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-dim);
+}
+
+.empty-state .e-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+.empty-state p { font-size: 0.85rem; }
+
+/* ---- SEND BUTTON AREA ---- */
+.action-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 90;
+}
+
+.action-bar.visible { transform: translateY(0); }
+
+.action-info { font-size: 0.82rem; color: var(--text-dim); }
+.action-info strong { color: var(--text); }
+
+.action-btns { display: flex; gap: 0.75rem; }
+
+/* ---- TOAST ---- */
+.toast {
+  position: fixed;
+  top: 72px; right: 20px;
+  background: var(--surface2);
+  border: 1px solid var(--green);
+  border-radius: 10px;
+  padding: 0.75rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.8rem;
+  z-index: 200;
+  transform: translateX(300px);
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  max-width: 280px;
+}
+
+.toast.show { transform: translateX(0); }
+.toast-icon { font-size: 1.1rem; }
+.toast strong { display: block; font-size: 0.82rem; margin-bottom: 1px; }
+.toast span { font-size: 0.72rem; color: var(--text-dim); }
+
+/* ---- PROGRESS LOADING ---- */
+.loading-bar {
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  width: 0%;
+  transition: width 0.4s ease;
+  border-radius: 2px;
+  position: fixed;
+  top: 58px; left: 0;
+  z-index: 101;
+}
+
+/* ---- BADGE ---- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+.dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.badge-green { background: rgba(34,197,94,0.15); color: var(--green); }
+.badge-gray { background: rgba(124,132,153,0.15); color: var(--text-dim); }
+
+@media (max-width: 768px) {
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .container { padding: 1rem; }
+  .vehicle-stats { gap: 0.75rem; }
+  .vs-item:nth-child(2) { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loading-bar"></div>
+
+<header>
+  <div class="logo">Aceros <em>Turia</em></div>
+  <div class="header-right">
+    <span class="phase-tag">Fase 1 · Programación</span>
+    <button class="btn btn-ghost btn-sm" onclick="loadDemo()">📋 Cargar demo</button>
+  </div>
+</header>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-icon">✅</div>
+  <div>
+    <strong id="toast-title">Listo</strong>
+    <span id="toast-sub">Operación completada</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- UPLOAD -->
+  <div class="upload-section" id="upload-section">
+    <div class="drop-zone" id="drop-zone"
+      ondragover="handleDragOver(event)"
+      ondragleave="handleDragLeave(event)"
+      ondrop="handleDrop(event)"
+      onclick="document.getElementById('file-input').click()">
+      <span class="drop-icon">📊</span>
+      <div class="drop-title">Arrastra tu Excel de programación aquí</div>
+      <div class="drop-sub">O haz clic para seleccionar el archivo · Formatos: <strong>.xlsx · .xls</strong></div>
+      <button class="btn btn-primary" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+        Seleccionar archivo
+      </button>
+      <div class="columns-guide">
+        <span class="col-tag">VEHICULO</span>
+        <span class="col-tag">CLIENTE</span>
+        <span class="col-tag">VENDEDOR</span>
+        <span class="col-tag"># PEDIDO</span>
+        <span class="col-tag">DESCRIPCION ARTICULO</span>
+        <span class="col-tag">CANTIDAD</span>
+        <span class="col-tag">KILOS</span>
+        <span class="col-tag">OBRA</span>
+        <span class="col-tag">DIRECCION</span>
+        <span class="col-tag">CIUDAD</span>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFile(event)">
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Vehículos</div>
+      <div class="stat-value" id="stat-vehicles" style="color:var(--accent)">0</div>
+      <div class="stat-sub">programados hoy</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pedidos totales</div>
+      <div class="stat-value" id="stat-orders" style="color:var(--blue)">0</div>
+      <div class="stat-sub">a entregar</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total kilos</div>
+      <div class="stat-value" id="stat-kg" style="color:var(--green)">0</div>
+      <div class="stat-sub" id="stat-kg-sub">kg programados</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Ciudades</div>
+      <div class="stat-value" id="stat-cities" style="color:var(--yellow)">0</div>
+      <div class="stat-sub">destinos distintos</div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div id="toolbar-section" style="display:none">
+    <div class="section-header">
+      <div class="section-title">Rutas del día</div>
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <span id="date-label" style="font-size:0.75rem;color:var(--text-dim)"></span>
+      </div>
+    </div>
+    <div class="toolbar">
+      <input class="search-input" type="text" placeholder="🔍  Buscar cliente, pedido o ciudad..." oninput="filterData(this.value)" id="search-input">
+      <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expandir todo</button>
+      <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Colapsar</button>
+    </div>
+  </div>
+
+  <!-- VEHICLES -->
+  <div class="vehicles-grid" id="vehicles-grid">
+    <div class="empty-state">
+      <div class="e-icon">🚛</div>
+      <p>Sube el Excel de programación para ver las rutas del día</p>
+    </div>
+  </div>
+
+  <div style="height:100px"></div>
+</div>
+
+<!-- ACTION BAR -->
+<div class="action-bar" id="action-bar">
+  <div class="action-info">
+    <strong id="action-summary">0 vehículos listos</strong>
+    <br>Revisa los estados antes de publicar
+  </div>
+  <div class="action-btns">
+    <button class="btn btn-ghost" onclick="exportData()">⬇ Exportar</button>
+    <button class="btn btn-ghost" onclick="abrirReprogramar()" style="color:var(--red);border-color:rgba(239,68,68,0.3)">🔄 Reprogramar día</button>
+    <button class="btn btn-green" onclick="publishRoutes()">🚀 Publicar rutas al equipo</button>
+  </div>
+</div>
+
+<!-- MODAL: Confirmar reprogramación -->
+<div id="modal-reprogramar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:flex-end;justify-content:center;padding:1.5rem">
+  <div style="background:var(--surface);border:1px solid rgba(239,68,68,0.3);border-radius:16px;padding:1.75rem;width:100%;max-width:500px;animation:slideUp 0.3s ease">
+    <div style="font-size:2rem;text-align:center;margin-bottom:0.75rem">🔄</div>
+    <div style="font-size:1rem;font-weight:700;text-align:center;margin-bottom:0.5rem">Reprogramar el día</div>
+    <div style="font-size:0.82rem;color:var(--text-dim);text-align:center;margin-bottom:1.25rem;line-height:1.6">
+      Esto borrará todos los pedidos de hoy en estado <strong style="color:var(--yellow)">Pendiente</strong> de la planta seleccionada.<br>
+      Los pedidos que ya están <strong style="color:var(--green)">En ruta</strong> o <strong style="color:var(--green)">Entregados</strong> <u>no se tocarán</u>.
+    </div>
+    <div id="reprogramar-preview" style="background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:0.85rem 1rem;margin-bottom:1.25rem;font-size:0.8rem"></div>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end">
+      <button onclick="cerrarReprogramar()" style="padding:0.6rem 1.25rem;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text-mid);cursor:pointer;font-family:'Sora',sans-serif;font-size:0.82rem">Cancelar</button>
+      <button onclick="confirmarReprogramar()" id="btn-confirmar-reprog" style="padding:0.6rem 1.25rem;border-radius:8px;border:none;background:var(--red);color:white;cursor:pointer;font-family:'Sora',sans-serif;font-size:0.82rem;font-weight:700">Sí, borrar y reprogramar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes slideUp {
+  from { transform:translateY(30px);opacity:0; }
+  to   { transform:translateY(0);opacity:1; }
+}
+</style>
+
+<script>
+// ============================================================
+// SUPABASE
+// ============================================================
+const SUPABASE_URL = 'https://zullhslppokhhswdairh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bGxoc2xwcG9raGhzd2RhaXJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MDU4MDEsImV4cCI6MjA5Mjk4MTgwMX0.NalrI8rLLW3m78dqVGrlmZTdJ_h6zRXzIP2MlM4gVMU';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================================
+// ESTADO GLOBAL
+// ============================================================
+let allData = []; // [{vehicle, orders:[{...}], totalKg}]
+let vehicleStatus = {}; // {vehicleName: status}
+let plantaSeleccionada = null; // 'amaga' | 'malambo'
+
+// Selector de planta al inicio
+(function initPlanta() {
+  const bar = document.createElement('div');
+  bar.id = 'planta-bar';
+  bar.style.cssText = 'background:var(--surface);border-bottom:1px solid var(--border2);padding:0.6rem 2rem;display:flex;align-items:center;gap:1rem;font-size:0.78rem;color:var(--text-dim)';
+  bar.innerHTML = `
+    <span style="font-weight:600">🏭 Planta:</span>
+    <button onclick="setPlanta('amaga',this)" style="padding:4px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--surface2);color:var(--text-mid);cursor:pointer;font-family:'Sora',sans-serif;font-size:0.75px;font-weight:600;font-size:0.75rem;transition:all 0.18s" id="btn-amaga">Amagá</button>
+    <button onclick="setPlanta('malambo',this)" style="padding:4px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--surface2);color:var(--text-mid);cursor:pointer;font-family:'Sora',sans-serif;font-size:0.75rem;font-weight:600;transition:all 0.18s" id="btn-malambo">Malambo</button>
+    <span id="planta-label" style="margin-left:auto;font-size:0.72rem"></span>`;
+  document.querySelector('header').after(bar);
+})();
+
+function setPlanta(planta, btn) {
+  plantaSeleccionada = planta;
+  document.getElementById('btn-amaga').style.background = planta === 'amaga' ? 'rgba(249,115,22,0.15)' : 'var(--surface2)';
+  document.getElementById('btn-amaga').style.borderColor = planta === 'amaga' ? 'rgba(249,115,22,0.4)' : 'var(--border2)';
+  document.getElementById('btn-amaga').style.color = planta === 'amaga' ? 'var(--accent)' : 'var(--text-mid)';
+  document.getElementById('btn-malambo').style.background = planta === 'malambo' ? 'rgba(96,165,250,0.15)' : 'var(--surface2)';
+  document.getElementById('btn-malambo').style.borderColor = planta === 'malambo' ? 'rgba(96,165,250,0.4)' : 'var(--border2)';
+  document.getElementById('btn-malambo').style.color = planta === 'malambo' ? 'var(--blue)' : 'var(--text-mid)';
+  document.getElementById('planta-label').textContent = `Publicando en: Planta ${planta === 'amaga' ? 'Amagá' : 'Malambo'}`;
+}
+
+// ============================================================
+// LECTOR DE EXCEL — detecta formato Aceros Turia
+// ============================================================
+function handleFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  readExcel(file);
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  document.getElementById('drop-zone').classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) readExcel(file);
+}
+
+function readExcel(file) {
+  setLoading(30);
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      setLoading(60);
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      setLoading(80);
+      const parsed = parseAcerosTuriaFormat(rows);
+      setLoading(100);
+      setTimeout(() => {
+        renderData(parsed);
+        setLoading(0);
+        showToast('✅', 'Excel cargado', `${parsed.length} vehículos · ${parsed.reduce((a,v)=>a+v.orders.length,0)} pedidos`);
+      }, 300);
+    } catch(err) {
+      setLoading(0);
+      showToast('❌', 'Error al leer', 'Verifica el formato del archivo');
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Parser específico para el formato de Aceros Turia
+// Columnas: VEHICULO | CLIENTE | VENDEDOR | # PEDIDO | DESCRIPCION ARTICULO | CANTIDAD | KILOS | OBRA | DIRECCION | CIUDAD
+function parseAcerosTuriaFormat(rows) {
+  const vehicles = {};
+  let currentVehicle = null;
+  let headerRow = -1;
+
+  // Encontrar fila de encabezado
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowStr = row.join('|').toUpperCase();
+    if (rowStr.includes('VEHICULO') || rowStr.includes('VEHÍCULO') || rowStr.includes('CLIENTE')) {
+      headerRow = i;
+      break;
+    }
+  }
+
+  // Índices de columnas (detecta por nombre)
+  let colMap = {};
+  if (headerRow >= 0) {
+    rows[headerRow].forEach((cell, idx) => {
+      const c = String(cell).toUpperCase().trim();
+      if (c.includes('VEHICULO') || c.includes('VEHÍCULO')) colMap.vehiculo = idx;
+      else if (c === 'CLIENTE') colMap.cliente = idx;
+      else if (c === 'VENDEDOR') colMap.vendedor = idx;
+      else if (c.includes('PEDIDO')) colMap.pedido = idx;
+      else if (c.includes('DESCRIPCION') || c.includes('ARTÍCULO') || c.includes('ARTICULO')) colMap.descripcion = idx;
+      else if (c === 'CANTIDAD') colMap.cantidad = idx;
+      else if (c === 'KILOS') colMap.kilos = idx;
+      else if (c === 'OBRA') colMap.obra = idx;
+      else if (c.includes('DIRECCI')) colMap.direccion = idx;
+      else if (c === 'CIUDAD') colMap.ciudad = idx;
+    });
+  }
+
+  // Si no detectó encabezados, usar posiciones por defecto
+  if (Object.keys(colMap).length < 5) {
+    colMap = { vehiculo:0, cliente:1, vendedor:2, pedido:3, descripcion:4, cantidad:5, kilos:6, obra:7, direccion:8, ciudad:9 };
+  }
+
+  const get = (row, key) => String(row[colMap[key]] || '').trim();
+
+  for (let i = headerRow + 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.every(c => c === '' || c === null)) continue;
+
+    const vehicleCell = get(row, 'vehiculo');
+    const clienteCell = get(row, 'cliente');
+    const pedidoCell  = get(row, 'pedido');
+
+    // ¿Es fila de subtotal? (tiene número en kilos pero no tiene cliente/pedido)
+    const isSubtotal = !clienteCell && !pedidoCell && row.some(c => typeof c === 'number' && c > 100);
+    if (isSubtotal) continue;
+
+    // ¿Es fila de total general?
+    const rowStr = row.join('').toUpperCase();
+    if (rowStr.includes('TOTAL KG') || rowStr.includes('TOTAL KILOS')) continue;
+
+    // ¿Cambia el vehículo?
+    if (vehicleCell && vehicleCell.length > 1 && !vehicleCell.match(/^\d+$/)) {
+      currentVehicle = vehicleCell.toUpperCase();
+    }
+
+    // ¿Es fila de pedido válida?
+    if (clienteCell && clienteCell.length > 1 && currentVehicle) {
+      if (!vehicles[currentVehicle]) {
+        vehicles[currentVehicle] = { vehicle: currentVehicle, orders: [], totalKg: 0 };
+      }
+
+      const kilosRaw = row[colMap.kilos];
+      const kilos = typeof kilosRaw === 'number' ? kilosRaw : parseFloat(String(kilosRaw).replace(',','.')) || 0;
+      const cantRaw = row[colMap.cantidad];
+      const cantidad = typeof cantRaw === 'number' ? cantRaw : parseFloat(String(cantRaw).replace(',','.')) || 0;
+
+      vehicles[currentVehicle].orders.push({
+        cliente:     clienteCell,
+        vendedor:    get(row, 'vendedor'),
+        pedido:      get(row, 'pedido'),
+        descripcion: get(row, 'descripcion'),
+        cantidad:    cantidad,
+        kilos:       kilos,
+        obra:        get(row, 'obra'),
+        direccion:   get(row, 'direccion'),
+        ciudad:      get(row, 'ciudad'),
+        status:      'pendiente'
+      });
+      vehicles[currentVehicle].totalKg += kilos;
+    }
+  }
+
+  return Object.values(vehicles);
+}
+
+// ============================================================
+// DATOS DEMO (basado en el Excel real de Aceros Turia)
+// ============================================================
+function loadDemo() {
+  const demo = [
+    {
+      vehicle: 'GRUA ELKIN', totalKg: 7986.24,
+      orders: [
+        { cliente:'CONALTURA CONSTRUCCI', vendedor:'Angie Ortiz Giraldo', pedido:'48186', descripcion:'Malla Electrosoldada 5.50x5.50 - 15x15 (XX-159)', cantidad:200, kilos:6816, obra:'CD 188 I', direccion:'CALLE 77 SUR # 3', ciudad:'SABANETA', status:'pendiente' },
+        { cliente:'CONSTRUCTORA CAPITAL', vendedor:'Vostos Group SAS', pedido:'48290', descripcion:'Malla Electrosoldada 4.00x4.00 - 25x25 (XX-050)', cantidad:106, kilos:1170.24, obra:'Proyecto', direccion:'Calle 75B Sur # 40', ciudad:'SABANETA', status:'pendiente' }
+      ]
+    },
+    {
+      vehicle: 'TURBO CASTAÑO', totalKg: 5622.7,
+      orders: [
+        { cliente:'CARCAFE LTDA', vendedor:'Diego Alejandro Quintero C.', pedido:'47516', descripcion:'Gavion Cal 12 De 2m X 1m X 1m (Sin Diafragma)', cantidad:143, kilos:1901.9, obra:'FISCAL', direccion:'CL 72 10 07 OF 1', ciudad:'BOGOTÁ', status:'pendiente' },
+        { cliente:'CONSTRUCTORA CONARTE', vendedor:'Diego Alejandro Quintero C.', pedido:'48525', descripcion:'Malla Electrosoldada 5.00x5.00 - 15x15 (XX-131)', cantidad:100, kilos:2812.8, obra:'COMERCIO', direccion:'CALLE 50 #53-10', ciudad:'COPACABANA', status:'pendiente' },
+        { cliente:'SODIMAC COLOMBIA SA', vendedor:'Eliana Rodas Aguirre', pedido:'48309', descripcion:'ACERO FIGURADO G60 3/4"', cantidad:908, kilos:908, obra:'', direccion:'cra 79 n 39-135', ciudad:'COPACABANA', status:'pendiente' }
+      ]
+    },
+    {
+      vehicle: 'TURBO SANTIAGO', totalKg: 5020.6,
+      orders: [
+        { cliente:'MARTINEZ MONTOYA ANDE', vendedor:'Diego Alejandro Quintero C.', pedido:'48486', descripcion:'Corrugado 3/8 x 9 metros', cantidad:400, kilos:2016, obra:'FISCAL', direccion:'CL 49 48 10', ciudad:'CIUDAD BOLIVAR', status:'pendiente' },
+        { cliente:'FERRETERIA EL POTRILLO', vendedor:'Diego Alejandro Quintero C.', pedido:'48524', descripcion:'Corrugado 3/8 x 6 metros', cantidad:300, kilos:1008, obra:'OBRA', direccion:'CL 49 52 27 LC 1', ciudad:'AMAGA', status:'pendiente' },
+        { cliente:'FERRETERIA EL POTRILLO', vendedor:'Diego Alejandro Quintero C.', pedido:'48524', descripcion:'Corrugado 1/2 x 6 metros', cantidad:335, kilos:1996.6, obra:'OBRA', direccion:'CL 49 52 27 LC 1', ciudad:'AMAGA', status:'pendiente' }
+      ]
+    },
+    {
+      vehicle: 'SENCILLO VERDE', totalKg: 14591,
+      orders: [
+        { cliente:'NIVEL CONSTRUCCIONES S', vendedor:'Diego Alejandro Quintero C.', pedido:'48383', descripcion:'ACERO FIGURADO G60 7/8"', cantidad:14591, kilos:14591, obra:'OBRA AU', direccion:'car 48 44 sur 173', ciudad:'ENVIGADO', status:'pendiente' }
+      ]
+    },
+    {
+      vehicle: 'GRUA ANDRES', totalKg: 8438.4,
+      orders: [
+        { cliente:'HIERROS MADEBELLO S.A.S', vendedor:'Diego Alejandro Quintero C.', pedido:'48385', descripcion:'Malla Electrosoldada 5.00x5.00 - 15x15 (XX-131)', cantidad:300, kilos:8438.4, obra:'Obra', direccion:'DG 51 42 54', ciudad:'BELLO', status:'pendiente' }
+      ]
+    },
+    {
+      vehicle: 'SENCILLO BLANCO', totalKg: 8160,
+      orders: [
+        { cliente:'CONSTRUCCIONES Y PORC', vendedor:'Juan Pablo Acevedo Vargas', pedido:'48451', descripcion:'Alambre recocido calibre 17 (25kg)', cantidad:1000, kilos:1000, obra:'SAMANT', direccion:'Cl. 17 #43F – 122', ciudad:'MEDELLIN', status:'pendiente' },
+        { cliente:'PROMOTORA BRISAS DEL V', vendedor:'Diego Alejandro Quintero C.', pedido:'48527', descripcion:'Corrugado 1/2 x 6 metros', cantidad:1000, kilos:5960, obra:'Brisas del C', direccion:'Cl 82 Sur #35, Pa', ciudad:'SABANETA', status:'pendiente' },
+        { cliente:'NIVEL CONSTRUCCIONES S', vendedor:'Diego Alejandro Quintero C.', pedido:'48383', descripcion:'Alambre recocido calibre 17 (25kg)', cantidad:1200, kilos:1200, obra:'OBRA AU', direccion:'car 48 44 sur 173', ciudad:'ENVIGADO', status:'pendiente' }
+      ]
+    },
+    {
+      vehicle: 'TURBO JUAN FERNANDO', totalKg: 5072.56,
+      orders: [
+        { cliente:'CONSTRUCTORA ASCENSO', vendedor:'Juan Pablo Acevedo Vargas', pedido:'48198', descripcion:'Malla Electrosoldada 5.50x5.50 - 15x15 (XX-159)', cantidad:50, kilos:1704, obra:'ANACAC', direccion:'CARRERA 57 # 46', ciudad:'ITAGUI', status:'pendiente' },
+        { cliente:'CONSTRUCTORA ASCENSO', vendedor:'Juan Pablo Acevedo Vargas', pedido:'48198', descripcion:'Alambre recocido calibre 17 (25kg)', cantidad:400, kilos:400, obra:'ANACAC', direccion:'CARRERA 57 # 46', ciudad:'ITAGUI', status:'pendiente' },
+        { cliente:'ARQUITECTURA Y CONCRE', vendedor:'Angie Ortiz Giraldo', pedido:'47780', descripcion:'Corrugado 3/8 x 9 metros', cantidad:589, kilos:2968.56, obra:'Vittrio', direccion:'36 A Sur #46 A - 8', ciudad:'ENVIGADO', status:'pendiente' }
+      ]
+    }
+  ];
+  renderData(demo);
+  showToast('📋', 'Demo cargado', '7 vehículos · 20 pedidos · 54,891 kg');
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderData(data) {
+  allData = data;
+  vehicleStatus = {};
+  data.forEach(v => vehicleStatus[v.vehicle] = 'pendiente');
+
+  updateStats(data);
+  renderVehicles(data);
+
+  document.getElementById('stats-row').classList.add('visible');
+  document.getElementById('vehicles-grid').classList.add('visible');
+  document.getElementById('toolbar-section').style.display = '';
+  document.getElementById('action-bar').classList.add('visible');
+
+  // Fecha actual
+  const now = new Date();
+  document.getElementById('date-label').textContent =
+    now.toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  updateActionBar();
+}
+
+function updateStats(data) {
+  const totalOrders = data.reduce((a,v) => a + v.orders.length, 0);
+  const totalKg = data.reduce((a,v) => a + v.totalKg, 0);
+  const cities = [...new Set(data.flatMap(v => v.orders.map(o => o.ciudad.trim().toUpperCase()).filter(Boolean)))];
+
+  animateNumber('stat-vehicles', data.length);
+  animateNumber('stat-orders', totalOrders);
+  animateNumber('stat-kg', Math.round(totalKg));
+  animateNumber('stat-cities', cities.length);
+  document.getElementById('stat-kg-sub').textContent = `${totalKg.toLocaleString('es-CO')} kg totales`;
+}
+
+function animateNumber(id, target) {
+  const el = document.getElementById(id);
+  let current = 0;
+  const step = Math.ceil(target / 30);
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = current.toLocaleString('es-CO');
+    if (current >= target) clearInterval(timer);
+  }, 30);
+}
+
+function renderVehicles(data) {
+  const grid = document.getElementById('vehicles-grid');
+
+  if (!data.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="e-icon">🔍</div><p>No se encontraron resultados</p></div>';
+    return;
+  }
+
+  grid.innerHTML = data.map((v, vi) => {
+    const cities = [...new Set(v.orders.map(o => o.ciudad.trim()).filter(Boolean))].join(', ');
+    const vendors = [...new Set(v.orders.map(o => o.vendedor).filter(Boolean))];
+    const status = vehicleStatus[v.vehicle] || 'pendiente';
+
+    return `
+    <div class="vehicle-card" id="vc-${vi}">
+      <div class="vehicle-header" onclick="toggleVehicle(${vi})">
+        <div class="vehicle-icon">${getVehicleIcon(v.vehicle)}</div>
+        <div style="flex:1">
+          <div class="vehicle-name">${v.vehicle}</div>
+          <div class="vehicle-meta">${v.orders.length} pedido${v.orders.length!==1?'s':''} · ${cities || 'Sin ciudad'}</div>
+        </div>
+        <div class="vehicle-stats">
+          <div class="vs-item">
+            <div class="vs-val">${v.orders.length}</div>
+            <div class="vs-label">Pedidos</div>
+          </div>
+          <div class="vs-item">
+            <div class="vs-val">${v.totalKg.toLocaleString('es-CO')} kg</div>
+            <div class="vs-label">Carga</div>
+          </div>
+          <div>
+            <select class="status-select" onchange="changeStatus(event,'${v.vehicle}')" onclick="event.stopPropagation()">
+              <option value="pendiente" ${status==='pendiente'?'selected':''}>⏳ En planta</option>
+              <option value="en-ruta" ${status==='en-ruta'?'selected':''}>🚛 En ruta</option>
+              <option value="completado" ${status==='completado'?'selected':''}>✅ Completado</option>
+              <option value="novedad" ${status==='novedad'?'selected':''}>⚠️ Novedad</option>
+            </select>
+          </div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+
+      <div class="orders-wrap">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th># Pedido</th>
+              <th>Cliente / Vendedor</th>
+              <th>Artículo</th>
+              <th>Cant.</th>
+              <th>Kilos</th>
+              <th>Ciudad</th>
+              <th>Obra / Dirección</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${v.orders.map(o => `
+              <tr>
+                <td><span class="order-num">${o.pedido || '—'}</span></td>
+                <td>
+                  <div class="client-name">${o.cliente}</div>
+                  <div class="client-vendor">${o.vendedor}</div>
+                </td>
+                <td>
+                  <div class="product-name">${o.descripcion}</div>
+                  <div class="product-detail">Cant: ${o.cantidad}</div>
+                </td>
+                <td class="kg-val" style="color:var(--text-dim)">${o.cantidad.toLocaleString('es-CO')}</td>
+                <td class="kg-val" style="color:var(--accent)">${o.kilos.toLocaleString('es-CO')}</td>
+                <td><span class="city-badge">${o.ciudad || '—'}</span></td>
+                <td>
+                  <div style="font-size:0.75rem">${o.obra || '—'}</div>
+                  <div style="font-size:0.68rem;color:var(--text-dim)">${o.direccion || ''}</div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="vehicle-footer">
+          <span class="total-label">Total carga:</span>
+          <span class="total-value">${v.totalKg.toLocaleString('es-CO')} kg</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getVehicleIcon(name) {
+  const n = name.toUpperCase();
+  if (n.includes('GRUA')) return '🏗️';
+  if (n.includes('TURBO')) return '🚛';
+  if (n.includes('SENCILLO')) return '🚐';
+  return '🚚';
+}
+
+// ============================================================
+// INTERACCIONES
+// ============================================================
+function toggleVehicle(vi) {
+  const card = document.getElementById('vc-' + vi);
+  card.classList.toggle('open');
+}
+
+function expandAll() {
+  document.querySelectorAll('.vehicle-card').forEach(c => c.classList.add('open'));
+}
+
+function collapseAll() {
+  document.querySelectorAll('.vehicle-card').forEach(c => c.classList.remove('open'));
+}
+
+function changeStatus(e, vehicleName) {
+  vehicleStatus[vehicleName] = e.target.value;
+  updateActionBar();
+  const labels = { 'en-ruta':'🚛 En ruta', 'completado':'✅ Completado', 'novedad':'⚠️ Novedad', 'pendiente':'⏳ En planta' };
+  showToast('🔄', vehicleName, labels[e.target.value] || e.target.value);
+}
+
+function updateActionBar() {
+  const enRuta = Object.values(vehicleStatus).filter(s => s === 'en-ruta').length;
+  const total = Object.keys(vehicleStatus).length;
+  document.getElementById('action-summary').textContent = `${total} vehículos · ${enRuta} en ruta`;
+}
+
+function filterData(query) {
+  const q = query.toLowerCase();
+  if (!q) { renderVehicles(allData); return; }
+
+  const filtered = allData.map(v => ({
+    ...v,
+    orders: v.orders.filter(o =>
+      o.cliente.toLowerCase().includes(q) ||
+      o.pedido.includes(q) ||
+      o.ciudad.toLowerCase().includes(q) ||
+      o.vendedor.toLowerCase().includes(q) ||
+      o.descripcion.toLowerCase().includes(q)
+    )
+  })).filter(v => v.orders.length > 0 || v.vehicle.toLowerCase().includes(q));
+
+  renderVehicles(filtered);
+  if (filtered.length) expandAll();
+}
+
+async function publishRoutes() {
+  if (!allData.length) {
+    showToast('⚠️', 'Sin datos', 'Carga el Excel primero');
+    return;
+  }
+
+  if (!plantaSeleccionada) {
+    showToast('⚠️', 'Selecciona la planta', 'Elige Amagá o Malambo antes de publicar');
+    document.getElementById('planta-bar').style.boxShadow = '0 0 0 2px var(--accent)';
+    setTimeout(() => document.getElementById('planta-bar').style.boxShadow = '', 2000);
+    return;
+  }
+
+  const btn = document.querySelector('.btn-green');
+  btn.textContent = '⏳ Publicando...';
+  btn.disabled = true;
+
+  const hoy = new Date().toISOString().split('T')[0];
+  let pedidosCreados = 0;
+  let errores = 0;
+
+  for (const vehiculo of allData) {
+    const { data: vehiculoData } = await sb
+      .from('vehiculos')
+      .select('id')
+      .ilike('nombre', vehiculo.vehicle.trim())
+      .eq('planta', plantaSeleccionada)
+      .single();
+
+    if (!vehiculoData) {
+      console.warn(`Vehículo no encontrado en planta ${plantaSeleccionada}: ${vehiculo.vehicle}`);
+      errores++;
+      continue;
+    }
+
+    const grupos = {};
+    for (const order of vehiculo.orders) {
+      const key = `${order.pedido}|${order.cliente}`;
+      if (!grupos[key]) {
+        grupos[key] = {
+          numero_pedido: order.pedido,
+          cliente:       order.cliente,
+          vendedor:      order.vendedor,
+          obra:          order.obra,
+          direccion:     order.direccion,
+          ciudad:        order.ciudad,
+          items:         []
+        };
+      }
+      grupos[key].items.push({ descripcion: order.descripcion, cantidad: order.cantidad, kilos: order.kilos });
+    }
+
+    for (const grupo of Object.values(grupos)) {
+      const totalKilos    = grupo.items.reduce((a, it) => a + it.kilos, 0);
+      const totalCantidad = grupo.items.reduce((a, it) => a + it.cantidad, 0);
+
+      const { data: vendedorData } = await sb
+        .from('vendedores')
+        .select('id')
+        .ilike('nombre', grupo.vendedor.trim())
+        .single();
+
+      const { data: existe } = await sb
+        .from('pedidos')
+        .select('id')
+        .eq('numero_pedido', grupo.numero_pedido)
+        .eq('fecha', hoy)
+        .eq('vehiculo_id', vehiculoData.id)
+        .single();
+
+      if (existe) continue;
+
+      const { data: nuevoPedido, error } = await sb
+        .from('pedidos')
+        .insert({
+          numero_pedido:   grupo.numero_pedido,
+          fecha:           hoy,
+          cliente:         grupo.cliente,
+          obra:            grupo.obra,
+          direccion:       grupo.direccion,
+          ciudad:          grupo.ciudad,
+          vendedor_id:     vendedorData?.id || null,
+          vehiculo_id:     vehiculoData.id,
+          total_kilos:     totalKilos,
+          total_cantidad:  totalCantidad,
+          status:          'pendiente',
+          planta:          plantaSeleccionada
+        })
+        .select('id')
+        .single();
+
+      if (error) { errores++; continue; }
+
+      await sb.from('items_pedido').insert(
+        grupo.items.map(it => ({
+          pedido_id:   nuevoPedido.id,
+          descripcion: it.descripcion,
+          cantidad:    it.cantidad,
+          kilos:       it.kilos
+        }))
+      );
+      pedidosCreados++;
+    }
+  }
+
+  btn.textContent = '🚀 Publicar rutas al equipo';
+  btn.disabled = false;
+
+  const plantaNombre = plantaSeleccionada === 'amaga' ? 'Amagá' : 'Malambo';
+  if (pedidosCreados === 0 && errores > 0) {
+    showToast('⚠️', 'Error al publicar', `Verifica que los vehículos de ${plantaNombre} estén registrados`);
+  } else if (pedidosCreados === 0) {
+    showToast('ℹ️', 'Sin cambios', 'Estos pedidos ya fueron publicados hoy');
+  } else {
+    showToast('🚀', `${pedidosCreados} pedidos publicados`, `Planta ${plantaNombre} · Equipo notificado`);
+  }
+}
+
+// ============================================================
+// REPROGRAMAR DÍA
+// ============================================================
+async function abrirReprogramar() {
+  if (!plantaSeleccionada) {
+    showToast('⚠️', 'Selecciona la planta primero', '');
+    return;
+  }
+
+  const hoy  = new Date().toISOString().split('T')[0];
+  const plantaNombre = plantaSeleccionada === 'amaga' ? 'Amagá' : 'Malambo';
+
+  // Contar pedidos pendientes de hoy
+  const { data: pendientes } = await sb
+    .from('pedidos')
+    .select('id, numero_pedido, cliente')
+    .eq('fecha', hoy)
+    .eq('planta', plantaSeleccionada)
+    .eq('status', 'pendiente');
+
+  // Contar los que NO se tocarán
+  const { data: enCurso } = await sb
+    .from('pedidos')
+    .select('id')
+    .eq('fecha', hoy)
+    .eq('planta', plantaSeleccionada)
+    .in('status', ['en-ruta', 'en-destino', 'entregado', 'novedad']);
+
+  const preview = document.getElementById('reprogramar-preview');
+  if (!pendientes?.length) {
+    preview.innerHTML = `<span style="color:var(--green)">✅ No hay pedidos pendientes hoy en Planta ${plantaNombre}. Puedes subir el nuevo Excel directamente.</span>`;
+    document.getElementById('btn-confirmar-reprog').style.display = 'none';
+  } else {
+    preview.innerHTML = `
+      <div style="margin-bottom:0.6rem;font-weight:600;color:var(--text)">Planta ${plantaNombre} · ${hoy}</div>
+      <div style="color:var(--red);margin-bottom:4px">🗑️ Se borrarán <strong>${pendientes.length}</strong> pedido${pendientes.length!==1?'s':''} pendiente${pendientes.length!==1?'s':''}</div>
+      ${enCurso?.length ? `<div style="color:var(--green)">✅ Se conservarán <strong>${enCurso.length}</strong> pedido${enCurso.length!==1?'s':''} en ruta/entregados</div>` : ''}
+      <div style="margin-top:0.6rem;font-size:0.72rem;color:var(--text-dim)">
+        ${pendientes.slice(0,5).map(p => `· #${p.numero_pedido} ${p.cliente}`).join('<br>')}
+        ${pendientes.length > 5 ? `<br>· y ${pendientes.length - 5} más...` : ''}
+      </div>`;
+    document.getElementById('btn-confirmar-reprog').style.display = 'block';
+  }
+
+  document.getElementById('modal-reprogramar').style.display = 'flex';
+}
+
+function cerrarReprogramar() {
+  document.getElementById('modal-reprogramar').style.display = 'none';
+}
+
+async function confirmarReprogramar() {
+  const btn = document.getElementById('btn-confirmar-reprog');
+  btn.textContent = '⏳ Borrando...';
+  btn.disabled = true;
+
+  const hoy = new Date().toISOString().split('T')[0];
+
+  // Obtener IDs de pedidos pendientes
+  const { data: pendientes } = await sb
+    .from('pedidos')
+    .select('id')
+    .eq('fecha', hoy)
+    .eq('planta', plantaSeleccionada)
+    .eq('status', 'pendiente');
+
+  if (pendientes?.length) {
+    const ids = pendientes.map(p => p.id);
+
+    // Borrar ítems primero (por FK)
+    await sb.from('items_pedido').delete().in('pedido_id', ids);
+    await sb.from('historial_estados').delete().in('pedido_id', ids);
+
+    // Borrar pedidos
+    await sb.from('pedidos').delete().in('id', ids);
+  }
+
+  cerrarReprogramar();
+
+  const plantaNombre = plantaSeleccionada === 'amaga' ? 'Amagá' : 'Malambo';
+  showToast('🗑️', `${pendientes?.length || 0} pedidos borrados`,
+    `Planta ${plantaNombre} · Sube el nuevo Excel`);
+
+  btn.textContent = 'Sí, borrar y reprogramar';
+  btn.disabled = false;
+
+  // Limpiar la vista actual para que suba el nuevo Excel
+  allData = [];
+  vehicleStatus = {};
+  document.getElementById('vehicles-grid').innerHTML = `
+    <div class="empty-state">
+      <div class="e-icon">📋</div>
+      <p>Sube el Excel actualizado para reprogramar el día</p>
+    </div>`;
+  document.getElementById('stats-row').classList.remove('visible');
+  document.getElementById('toolbar-section').style.display = 'none';
+  document.getElementById('action-bar').classList.remove('visible');
+}
+
+// ============================================================
+// EXPORTAR
+// ============================================================
+function exportData() {
+  if (!allData.length) return;
+  const rows = [['Vehículo','Cliente','Vendedor','# Pedido','Artículo','Cantidad','Kilos','Obra','Dirección','Ciudad','Status']];
+  allData.forEach(v => {
+    v.orders.forEach(o => {
+      rows.push([v.vehicle, o.cliente, o.vendedor, o.pedido, o.descripcion, o.cantidad, o.kilos, o.obra, o.direccion, o.ciudad, vehicleStatus[v.vehicle]||'pendiente']);
+    });
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Programación');
+  XLSX.writeFile(wb, `aceros-turia-${new Date().toISOString().split('T')[0]}.xlsx`);
+  showToast('⬇️', 'Excel exportado', 'Archivo descargado correctamente');
+}
+
+// ============================================================
+// UTILIDADES
+// ============================================================
+function setLoading(pct) {
+  const bar = document.getElementById('loading-bar');
+  bar.style.width = pct + '%';
+  if (pct === 0) setTimeout(() => bar.style.width = '0%', 300);
+}
+
+function showToast(icon, title, sub) {
+  const t = document.getElementById('toast');
+  t.querySelector('.toast-icon').textContent = icon;
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-sub').textContent = sub;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
