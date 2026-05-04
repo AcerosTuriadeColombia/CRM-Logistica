@@ -1390,14 +1390,14 @@ function filterPedidos(q) {
 function copyLink() {
   const p = allPedidos.find(x => x.id === selectedPedidoId);
   if (!p) return;
-  const link = `https://aceros-turia.netlify.app/aceros-turia-fase4-cliente.html?token=${p.token_cliente || p.pedido}`;
+  const link = `https://AcerosTuriadeColombia.github.io/aceros-turia/aceros-turia-fase4-cliente.html?token=${p.token_cliente || p.pedido}`;
   showToast('🔗', 'Link copiado', link, 'toast-orange');
 }
 
 function shareWhatsApp() {
   const p = allPedidos.find(x => x.id === selectedPedidoId);
   if (!p) return;
-  const link = `https://aceros-turia.netlify.app/aceros-turia-fase4-cliente.html?token=${p.token_cliente || p.pedido}`;
+  const link = `https://AcerosTuriadeColombia.github.io/aceros-turia/aceros-turia-fase4-cliente.html?token=${p.token_cliente || p.pedido}`;
   const msg = encodeURIComponent(`Hola! Aquí puede hacer seguimiento a su pedido #${p.pedido}: ${link}`);
   showToast('📲', 'Abriendo WhatsApp', `Enviando link a ${p.cliente}`, 'toast-orange');
 }
