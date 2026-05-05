@@ -501,8 +501,13 @@ tr:hover td { background:rgba(255,255,255,0.015); }
     <div class="header-logo">Aceros <span>Turia</span></div>
     <div class="admin-badge" id="header-rol-badge">🛡️ Administrador</div>
     <div class="header-right">
+      <a href="https://acerosturiadecolombia.github.io/aceros-turia/aceros-turia-portal.html"
+        style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:5px 12px;font-size:0.75rem;color:var(--text-mid);text-decoration:none;transition:all 0.18s"
+        onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-mid)'">
+        ← Menú principal
+      </a>
       <span style="font-size:0.75rem;color:var(--text-dim)" id="admin-name-display"></span>
-      <button class="btn-logout" id="btn-logout" onclick="adminLogout()">Cerrar sesión</button>
+      <button class="btn-logout" onclick="adminLogout()">Cerrar sesión</button>
     </div>
   </header>
 
