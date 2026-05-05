@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1505,6 +1505,29 @@ async function limpiarFotosAntiguas() {
   await verEstadoFotos();
 };
 
+
+// ============================================================
+// EXPONER FUNCIONES AL SCOPE GLOBAL EXPLÍCITAMENTE
+// ============================================================
+window.seleccionarRol     = seleccionarRol;
+window.volverRoles        = volverRoles;
+window.adminLogin         = adminLogin;
+window.adminLogout        = adminLogout;
+window.switchTab          = switchTab;
+window.abrirModalVendedor = abrirModalVendedor;
+window.editarVendedor     = editarVendedor;
+window.guardarVendedor    = guardarVendedor;
+window.toggleVendedor     = toggleVendedor;
+window.abrirModalVehiculo = abrirModalVehiculo;
+window.editarVehiculo     = editarVehiculo;
+window.guardarVehiculo    = guardarVehiculo;
+window.toggleVehiculo     = toggleVehiculo;
+window.abrirModalConductor= abrirModalConductor;
+window.guardarConductor   = guardarConductor;
+window.confirmarEliminar  = confirmarEliminar;
+window.cerrarModal        = cerrarModal;
+window.verEstadoFotos     = verEstadoFotos;
+window.limpiarFotosAntiguas = limpiarFotosAntiguas;
 
 // Cerrar modals al click fuera
 document.querySelectorAll('.modal-overlay').forEach(m => {
