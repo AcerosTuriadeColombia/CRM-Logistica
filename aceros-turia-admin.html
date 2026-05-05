@@ -582,6 +582,7 @@ tr:hover td { background:rgba(255,255,255,0.015); }
               <th>Vehículo</th>
               <th>Planta</th>
               <th>Conductor</th>
+              <th>PIN</th>
               <th>Placa</th>
               <th>Tipo</th>
               <th>Estado</th>
@@ -750,6 +751,14 @@ tr:hover td { background:rgba(255,255,255,0.015); }
       <div class="full">
         <label class="field-label">Conductor</label>
         <input class="field-input" type="text" id="vh-conductor" placeholder="Nombre del conductor">
+      </div>
+      <div class="full">
+        <label class="field-label">PIN del conductor (4 dígitos)</label>
+        <input class="field-input" type="text" id="vh-pin" maxlength="4" placeholder="0000"
+          style="letter-spacing:6px;font-family:'JetBrains Mono',monospace;font-size:1.1rem">
+        <div style="font-size:0.68rem;color:var(--text-dim);margin-top:4px">
+          El conductor usa este PIN para ingresar a la app.
+        </div>
       </div>
       <div class="full">
         <label class="field-label">Estado</label>
@@ -1069,6 +1078,7 @@ function renderVehiculos() {
       </td>
       <td>${plantaBadge[v.planta] || v.planta}</td>
       <td>${v.conductor}</td>
+      <td><span class="mono" style="letter-spacing:3px;color:var(--accent)">${v.pin || '—'}</span></td>
       <td><span class="mono">${v.placa || '—'}</span></td>
       <td><span class="badge badge-gray">${v.tipo}</span></td>
       <td>
@@ -1246,8 +1256,8 @@ function abrirModalVehiculo() {
   document.getElementById('vh-placa').value = '';
   document.getElementById('vh-tipo').value = 'turbo';
   document.getElementById('vh-conductor').value = '';
+  document.getElementById('vh-pin').value = '';
   document.getElementById('vh-activo').value = 'true';
-  // Preseleccionar la planta del supervisor activo
   document.getElementById('vh-planta').value = plantaActual || 'amaga';
   abrirModal('modal-vehiculo');
 }
@@ -1266,6 +1276,7 @@ function editarVehiculo(id) {
   document.getElementById('vh-placa').value = v.placa || '';
   document.getElementById('vh-tipo').value = v.tipo || 'turbo';
   document.getElementById('vh-conductor').value = v.conductor;
+  document.getElementById('vh-pin').value = v.pin || '';
   document.getElementById('vh-activo').value = String(v.activo);
   document.getElementById('vh-planta').value = v.planta || 'amaga';
   abrirModal('modal-vehiculo');
@@ -1277,14 +1288,18 @@ async function guardarVehiculo() {
   const placa     = document.getElementById('vh-placa').value.trim().toUpperCase();
   const tipo      = document.getElementById('vh-tipo').value;
   const conductor = document.getElementById('vh-conductor').value.trim();
+  const pin       = document.getElementById('vh-pin').value.trim();
   const activo    = document.getElementById('vh-activo').value === 'true';
   const planta    = document.getElementById('vh-planta').value;
 
   if (!nombre || !conductor) {
     showToast('⚠️','Campos requeridos','Nombre y conductor son obligatorios',''); return;
   }
+  if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+    showToast('⚠️','PIN inválido','El PIN debe ser exactamente 4 dígitos',''); return;
+  }
 
-  const payload = { nombre, placa, tipo, conductor, activo, planta };
+  const payload = { nombre, placa, tipo, conductor, pin, activo, planta };
   let error;
   if (id) {
     ({ error } = await sb.from('vehiculos').update(payload).eq('id', id));

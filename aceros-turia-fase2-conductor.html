@@ -896,47 +896,46 @@ textarea.field-input {
     <span class="truck-graphic">🚛</span>
 
     <div class="login-card">
-      <h3>Selecciona tu vehículo</h3>
 
-      <div class="driver-grid" id="driver-grid">
-        <div class="driver-option" onclick="selectDriver(this,'Jorge Restrepo','GRUA ELKIN','grua-elkin')">
-          <span class="do-truck">🏗️</span>
-          <span style="font-size:0.72rem;font-weight:700">GRUA ELKIN</span>
-          <span style="font-size:0.65rem;color:var(--text-dim);display:block">Jorge Restrepo</span>
+      <!-- PASO 1: SELECCIONAR VEHÍCULO -->
+      <div id="paso-vehiculo">
+        <h3>Selecciona tu vehículo</h3>
+        <div class="driver-grid" id="driver-grid">
+          <div style="text-align:center;padding:1rem;color:var(--text-dim);font-size:0.8rem;grid-column:1/-1">
+            Cargando vehículos...
+          </div>
         </div>
-        <div class="driver-option" onclick="selectDriver(this,'Andrés Cano','TURBO CASTAÑO','turbo-castano')">
-          <span class="do-truck">🚛</span>
-          <span style="font-size:0.72rem;font-weight:700">TURBO CASTAÑO</span>
-          <span style="font-size:0.65rem;color:var(--text-dim);display:block">Andrés Cano</span>
-        </div>
-        <div class="driver-option" onclick="selectDriver(this,'Luis Vélez','TURBO SANTIAGO','turbo-santiago')">
-          <span class="do-truck">🚛</span>
-          <span style="font-size:0.72rem;font-weight:700">TURBO SANTIAGO</span>
-          <span style="font-size:0.65rem;color:var(--text-dim);display:block">Luis Vélez</span>
-        </div>
-        <div class="driver-option" onclick="selectDriver(this,'Diego Salazar','SENCILLO VERDE','sencillo-verde')">
-          <span class="do-truck">🚐</span>
-          <span style="font-size:0.72rem;font-weight:700">SENCILLO VERDE</span>
-          <span style="font-size:0.65rem;color:var(--text-dim);display:block">Diego Salazar</span>
-        </div>
-        <div class="driver-option" onclick="selectDriver(this,'Carlos Muñoz','GRUA ANDRES','grua-andres')">
-          <span class="do-truck">🏗️</span>
-          <span style="font-size:0.72rem;font-weight:700">GRUA ANDRES</span>
-          <span style="font-size:0.65rem;color:var(--text-dim);display:block">Carlos Muñoz</span>
-        </div>
-        <div class="driver-option" onclick="selectDriver(this,'Felipe Torres','SENCILLO BLANCO','sencillo-blanco')">
-          <span class="do-truck">🚐</span>
-          <span style="font-size:0.72rem;font-weight:700">SENCILLO BLANCO</span>
-          <span style="font-size:0.65rem;color:var(--text-dim);display:block">Felipe Torres</span>
-        </div>
-        <div class="driver-option" onclick="selectDriver(this,'Hernán Parra','TURBO JUAN FERNANDO','turbo-juan-fernando')">
-          <span class="do-truck">🚛</span>
-          <span style="font-size:0.72rem;font-weight:700">TURBO JUAN F.</span>
-          <span style="font-size:0.65rem;color:var(--text-dim);display:block">Hernán Parra</span>
-        </div>
+        <button class="btn-login" onclick="irAPasoPin()">Continuar →</button>
+        <div id="error-vehiculo" style="font-size:0.75rem;color:var(--red);text-align:center;margin-top:8px;min-height:16px"></div>
       </div>
 
-      <button class="btn-login" onclick="startRoute()">Iniciar ruta →</button>
+      <!-- PASO 2: INGRESAR PIN -->
+      <div id="paso-pin" style="display:none">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;padding:0.75rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border2)">
+          <span id="pin-vehiculo-icon" style="font-size:1.4rem">🚛</span>
+          <div>
+            <div style="font-size:0.85rem;font-weight:700" id="pin-vehiculo-nombre">—</div>
+            <div style="font-size:0.7rem;color:var(--text-dim)" id="pin-conductor-nombre">—</div>
+          </div>
+          <button onclick="volverAVehiculo()" style="margin-left:auto;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.75rem;font-family:'Plus Jakarta Sans',sans-serif">← Cambiar</button>
+        </div>
+
+        <h3 style="margin-bottom:1rem">Ingresa tu PIN</h3>
+
+        <input type="password" inputmode="numeric" maxlength="4" id="pin-input"
+          placeholder="• • • •"
+          style="width:100%;background:var(--surface2);border:1.5px solid var(--border2);
+                 border-radius:12px;padding:0.85rem;color:var(--text);font-size:1.8rem;
+                 letter-spacing:10px;font-family:'JetBrains Mono',monospace;outline:none;
+                 text-align:center;transition:border-color 0.2s;margin-bottom:0.75rem"
+          onfocus="this.style.borderColor='var(--accent)'"
+          onblur="this.style.borderColor='var(--border2)'"
+          onkeydown="if(event.key==='Enter') verificarPin()">
+
+        <div id="error-pin" style="font-size:0.75rem;color:var(--red);text-align:center;margin-bottom:0.75rem;min-height:16px"></div>
+        <button class="btn-login" onclick="verificarPin()" id="btn-verificar">Ingresar →</button>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1140,7 +1139,7 @@ async function initLogin() {
 
   const { data: vehiculos, error } = await supabase
     .from('vehiculos')
-    .select('id, nombre, conductor, tipo')
+    .select('id, nombre, conductor, tipo, pin')
     .eq('activo', true)
     .order('nombre');
 
@@ -1150,7 +1149,6 @@ async function initLogin() {
   }
 
   const iconos = { turbo:'🚛', grua:'🏗️', sencillo:'🚐' };
-
   grid.innerHTML = vehiculos.map(v => `
     <div class="driver-option"
       onclick="selectDriver(this,'${v.conductor}','${v.nombre}','${v.id}')">
@@ -1164,6 +1162,58 @@ window.selectDriver = function(el, name, vehicle, vehicleId) {
   document.querySelectorAll('.driver-option').forEach(d => d.classList.remove('selected'));
   el.classList.add('selected');
   selectedDriverEl = { name, vehicle, vehicleId };
+};
+
+window.irAPasoPin = function() {
+  if (!selectedDriverEl) {
+    document.getElementById('error-vehiculo').textContent = 'Selecciona tu vehículo primero.';
+    return;
+  }
+  document.getElementById('paso-vehiculo').style.display = 'none';
+  document.getElementById('paso-pin').style.display = 'block';
+  document.getElementById('pin-vehiculo-nombre').textContent = selectedDriverEl.vehicle;
+  document.getElementById('pin-conductor-nombre').textContent = selectedDriverEl.name;
+  document.getElementById('pin-input').value = '';
+  document.getElementById('error-pin').textContent = '';
+  setTimeout(() => document.getElementById('pin-input').focus(), 100);
+};
+
+window.volverAVehiculo = function() {
+  document.getElementById('paso-pin').style.display = 'none';
+  document.getElementById('paso-vehiculo').style.display = 'block';
+  document.getElementById('error-vehiculo').textContent = '';
+};
+
+window.verificarPin = async function() {
+  const pin = document.getElementById('pin-input').value.trim();
+  const errEl = document.getElementById('error-pin');
+  const btn = document.getElementById('btn-verificar');
+
+  if (pin.length !== 4) { errEl.textContent = 'El PIN debe ser de 4 dígitos.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+
+  const { data: v, error } = await supabase
+    .from('vehiculos')
+    .select('id, nombre, conductor, pin')
+    .eq('id', selectedDriverEl.vehicleId)
+    .eq('pin', pin)
+    .single();
+
+  btn.disabled = false;
+  btn.textContent = 'Ingresar →';
+
+  if (error || !v) {
+    errEl.textContent = 'PIN incorrecto. Intenta de nuevo.';
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('pin-input').style.borderColor = 'var(--border2)', 1500);
+    return;
+  }
+
+  errEl.textContent = '';
+  await startRoute();
 };
 
 window.startRoute = async function() {
