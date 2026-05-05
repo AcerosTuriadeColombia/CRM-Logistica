@@ -536,11 +536,49 @@ header {
 
 <div class="loading-bar" id="loading-bar"></div>
 
-<header>
+<!-- LOGIN SCREEN -->
+<div id="login-screen" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;padding:2rem">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:2rem;width:100%;max-width:380px">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="font-size:2.5rem;margin-bottom:0.5rem">🚛</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--accent)">PROGRAMACIÓN</div>
+      <div style="font-size:0.72rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;margin-top:4px">Supervisor de Logística</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.25rem" id="planta-cards">
+      <div onclick="seleccionarPlantaLogin('amaga',this)" style="background:var(--surface2);border:1.5px solid var(--border2);border-radius:12px;padding:1rem;text-align:center;cursor:pointer;transition:all 0.2s" id="card-amaga">
+        <div style="font-size:1.4rem;margin-bottom:4px">🏭</div>
+        <div style="font-size:0.8rem;font-weight:700">Amagá</div>
+      </div>
+      <div onclick="seleccionarPlantaLogin('malambo',this)" style="background:var(--surface2);border:1.5px solid var(--border2);border-radius:12px;padding:1rem;text-align:center;cursor:pointer;transition:all 0.2s" id="card-malambo">
+        <div style="font-size:1.4rem;margin-bottom:4px">🏭</div>
+        <div style="font-size:0.8rem;font-weight:700">Malambo</div>
+      </div>
+    </div>
+
+    <input type="password" id="login-clave" placeholder="Clave de acceso"
+      style="width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:10px;padding:0.75rem 1rem;color:var(--text);font-size:0.9rem;font-family:'Sora',sans-serif;outline:none;margin-bottom:0.75rem;transition:border-color 0.2s"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+      onkeydown="if(event.key==='Enter') loginFase1()">
+
+    <div id="login-error-f1" style="font-size:0.75rem;color:var(--red);text-align:center;margin-bottom:0.75rem;min-height:16px"></div>
+
+    <button onclick="loginFase1()" style="width:100%;padding:0.85rem;background:var(--accent);color:white;border:none;border-radius:12px;font-size:0.9rem;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='#ea6c0a'" onmouseout="this.style.background='var(--accent)'">
+      Ingresar →
+    </button>
+
+    <div style="margin-top:1rem;text-align:center">
+      <a href="https://acerosturiadecolombia.github.io/aceros-turia/aceros-turia-portal.html" style="font-size:0.75rem;color:var(--text-dim);text-decoration:none">← Volver al portal</a>
+    </div>
+  </div>
+</div>
+
+<header id="main-header" style="display:none">
   <div class="logo">Aceros <em>Turia</em></div>
   <div class="header-right">
     <span class="phase-tag">Fase 1 · Programación</span>
     <button class="btn btn-ghost btn-sm" onclick="loadDemo()">📋 Cargar demo</button>
+    <a href="https://acerosturiadecolombia.github.io/aceros-turia/aceros-turia-portal.html" class="btn btn-ghost btn-sm">← Portal</a>
   </div>
 </header>
 
@@ -673,8 +711,54 @@ header {
 
 <script>
 // ============================================================
-// SUPABASE
+// CLAVES SUPERVISORES
 // ============================================================
+const CLAVES_SUPERVISOR = {
+  'amaga':   'amaga2024',
+  'malambo': 'malambo2024'
+};
+
+let plantaLoginSeleccionada = null;
+
+function seleccionarPlantaLogin(planta, el) {
+  plantaLoginSeleccionada = planta;
+  document.getElementById('card-amaga').style.borderColor = 'var(--border2)';
+  document.getElementById('card-amaga').style.background = 'var(--surface2)';
+  document.getElementById('card-malambo').style.borderColor = 'var(--border2)';
+  document.getElementById('card-malambo').style.background = 'var(--surface2)';
+  el.style.borderColor = 'var(--accent)';
+  el.style.background = 'rgba(249,115,22,0.1)';
+  document.getElementById('login-clave').focus();
+}
+
+function loginFase1() {
+  const clave = document.getElementById('login-clave').value;
+  const errEl = document.getElementById('login-error-f1');
+
+  if (!plantaLoginSeleccionada) {
+    errEl.textContent = 'Selecciona tu planta primero.';
+    return;
+  }
+  if (!clave) {
+    errEl.textContent = 'Ingresa la clave de acceso.';
+    return;
+  }
+  if (CLAVES_SUPERVISOR[plantaLoginSeleccionada] !== clave) {
+    errEl.textContent = 'Clave incorrecta. Intenta de nuevo.';
+    document.getElementById('login-clave').value = '';
+    document.getElementById('login-clave').focus();
+    return;
+  }
+
+  // Login exitoso
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-header').style.display = 'flex';
+  document.getElementById('planta-bar').style.display = 'flex';
+
+  // Preseleccionar la planta
+  setPlanta(plantaLoginSeleccionada,
+    document.getElementById('btn-' + plantaLoginSeleccionada));
+}
 const SUPABASE_URL = 'https://zullhslppokhhswdairh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bGxoc2xwcG9raGhzd2RhaXJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MDU4MDEsImV4cCI6MjA5Mjk4MTgwMX0.NalrI8rLLW3m78dqVGrlmZTdJ_h6zRXzIP2MlM4gVMU';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -690,7 +774,7 @@ let plantaSeleccionada = null; // 'amaga' | 'malambo'
 (function initPlanta() {
   const bar = document.createElement('div');
   bar.id = 'planta-bar';
-  bar.style.cssText = 'background:var(--surface);border-bottom:1px solid var(--border2);padding:0.6rem 2rem;display:flex;align-items:center;gap:1rem;font-size:0.78rem;color:var(--text-dim)';
+  bar.style.cssText = 'background:var(--surface);border-bottom:1px solid var(--border2);padding:0.6rem 2rem;display:none;align-items:center;gap:1rem;font-size:0.78rem;color:var(--text-dim)';
   bar.innerHTML = `
     <span style="font-weight:600">🏭 Planta:</span>
     <button onclick="setPlanta('amaga',this)" style="padding:4px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--surface2);color:var(--text-mid);cursor:pointer;font-family:'Sora',sans-serif;font-size:0.75px;font-weight:600;font-size:0.75rem;transition:all 0.18s" id="btn-amaga">Amagá</button>
