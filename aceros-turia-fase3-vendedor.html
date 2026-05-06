@@ -837,18 +837,14 @@ header {
   </div>
 </div>
 
-<script type="module">
-// ============================================================
-// DATOS COMPLETOS (mismo Excel de referencia)
-// ============================================================
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
 // ============================================================
 // SUPABASE — conexión real
 // ============================================================
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
 const SUPABASE_URL = 'https://zullhslppokhhswdairh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bGxoc2xwcG9raGhzd2RhaXJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MDU4MDEsImV4cCI6MjA5Mjk4MTgwMX0.NalrI8rLLW3m78dqVGrlmZTdJ_h6zRXzIP2MlM4gVMU';
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================================
 // ESTADO
@@ -871,7 +867,7 @@ function init() {
 async function showLoginScreen() {
   // Desuscribir tiempo real si había sesión previa
   if (realtimeChannel) {
-    supabase.removeChannel(realtimeChannel);
+    sb.removeChannel(realtimeChannel);
     realtimeChannel = null;
   }
 
@@ -1432,6 +1428,29 @@ function showToast(icon, title, sub, cls) {
   clearTimeout(t._t);
   t._t = setTimeout(() => t.classList.remove('show'), 3500);
 }
+
+// ============================================================
+// LOGOUT
+// ============================================================
+function logout() {
+  currentVendor = null;
+  allPedidos = [];
+  if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+  document.getElementById('app-layout').style.display = 'none';
+  init();
+}
+
+// ============================================================
+// EXPONER FUNCIONES AL SCOPE GLOBAL
+// ============================================================
+window.loginWithPin      = loginWithPin;
+window.filterPedidos     = filterPedidos;
+window.setFilter         = setFilter;
+window.selectPedido      = selectPedido;
+window.shareWhatsApp     = shareWhatsApp;
+window.copyLink          = copyLink;
+window.simulateMovement  = simulateMovement;
+window.logout            = logout;
 
 // ============================================================
 init();
