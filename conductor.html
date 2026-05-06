@@ -1116,7 +1116,7 @@ textarea.field-input {
 <script>
 const SUPABASE_URL = 'https://zullhslppokhhswdairh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bGxoc2xwcG9raGhzd2RhaXJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MDU4MDEsImV4cCI6MjA5Mjk4MTgwMX0.NalrI8rLLW3m78dqVGrlmZTdJ_h6zRXzIP2MlM4gVMU';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================================
 // ESTADO GLOBAL
@@ -1331,7 +1331,7 @@ async function actualizarEstadoSupabase(pedidoId, status, nota = '') {
   }
 
   // Guardar en historial
-  await supabase.from('historial_estados').insert({
+  await sb.from('historial_estados').insert({
     pedido_id: pedidoId,
     status,
     gps_lat,
@@ -1349,7 +1349,7 @@ async function subirFotoRemision(pedidoId, file) {
   const ext      = file.type.includes('png') ? 'png' : 'jpg';
   const fileName = `remisiones/${pedidoId}-${Date.now()}.${ext}`;
 
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await sb.storage
     .from('fotos-remisiones')
     .upload(fileName, file, { contentType: file.type, upsert: true });
 
@@ -1358,11 +1358,11 @@ async function subirFotoRemision(pedidoId, file) {
     return null;
   }
 
-  const { data: urlData } = supabase.storage
+  const { data: urlData } = sb.storage
     .from('fotos-remisiones')
     .getPublicUrl(fileName);
 
-  await supabase.from('pedidos').update({
+  await sb.from('pedidos').update({
     foto_remision_url:  urlData.publicUrl,
     foto_remision_at:   new Date().toISOString()
   }).eq('id', pedidoId);
