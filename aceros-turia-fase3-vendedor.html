@@ -880,7 +880,7 @@ async function showLoginScreen() {
   pinAttempts = 0;
 
   // Cargar vendedores desde Supabase para el select
-  const { data: vendedores } = await supabase
+  const { data: vendedores } = await sb
     .from('vendedores')
     .select('nombre')
     .order('nombre');
@@ -919,7 +919,7 @@ async function loginWithPin() {
   btn.disabled = true;
 
   // Verificar PIN contra Supabase
-  const { data: vendedor, error } = await supabase
+  const { data: vendedor, error } = await sb
     .from('vendedores')
     .select('id, nombre, whatsapp')
     .eq('nombre', vendorSel)
@@ -977,7 +977,7 @@ async function cargarPedidos() {
 
   const hoy = new Date().toISOString().split('T')[0];
 
-  const { data: pedidos, error } = await supabase
+  const { data: pedidos, error } = await sb
     .from('pedidos')
     .select(`
       id,
@@ -1057,7 +1057,7 @@ function posicionDesdeGps(lat, lng) {
 // TIEMPO REAL — Supabase WebSocket
 // ============================================================
 function suscribirTiempoReal() {
-  realtimeChannel = supabase
+  realtimeChannel = sb
     .channel('pedidos-vendedor-' + currentVendor.id)
     .on(
       'postgres_changes',
