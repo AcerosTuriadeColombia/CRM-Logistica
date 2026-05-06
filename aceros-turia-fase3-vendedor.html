@@ -909,7 +909,7 @@ async function loginWithPin() {
   const vendorSel = document.getElementById('login-vendor-select').value;
   const pin = document.getElementById('login-pin').value.trim();
   const errEl = document.getElementById('login-error');
-  const btn = document.querySelector('.btn-login');
+  const btn = document.getElementById('login-btn');
 
   if (!vendorSel) { errEl.textContent = 'Selecciona tu nombre primero.'; return; }
   if (pin.length !== 4) { errEl.textContent = 'La clave debe ser de 4 dígitos.'; return; }
