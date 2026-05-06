@@ -1600,9 +1600,7 @@ function updateShStatus(status, detailOverride) {
 // ============================================================
 // FOTO REMISIÓN
 // ============================================================
-let photoUploaded = false;
-
-function handlePhotoUpload(event) {
+photoUploaded = false;function handlePhotoUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
 
