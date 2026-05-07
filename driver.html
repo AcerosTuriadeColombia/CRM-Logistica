@@ -51,7 +51,7 @@ body {
   display: none;
   flex-direction: column;
   height: 100vh;
-  overflow: visible;
+  overflow: hidden;
 }
 .screen.active { display: flex; }
 
@@ -256,12 +256,10 @@ body {
 /* Scrollable content */
 .app-body {
   flex: 1;
-  overflow-y: scroll;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
   padding: 1rem;
   padding-bottom: 5rem;
-  max-height: calc(100vh - 60px);
 }
 
 /* STATUS HERO */
@@ -1480,6 +1478,7 @@ function renderStops() {
       </div>
       <div class="stop-detail" id="stop-detail-${i}">
         <div class="stop-detail-inner">
+          ${stopButtons}
           <div class="detail-row">
             <span class="dr-label"># Pedido</span>
             <span class="dr-value mono text-accent">${s.pedido}</span>
@@ -1525,7 +1524,6 @@ function renderStops() {
           <button class="btn-maps" onclick="openMaps(${i})">
             🗺️ Abrir en Google Maps
           </button>
-          ${stopButtons}
         </div>
       </div>
     </div>`;
