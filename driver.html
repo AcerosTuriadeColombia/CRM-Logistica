@@ -881,6 +881,25 @@ textarea.field-input {
 .stop-card:nth-child(2) { animation-delay: 0.1s; }
 .stop-card:nth-child(3) { animation-delay: 0.15s; }
 .stop-card:nth-child(4) { animation-delay: 0.2s; }
+
+/* FIXED STATUS BAR */
+#fixed-status-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 2px solid var(--border2);
+  padding: 0.65rem 1rem;
+  z-index: 100;
+  display: none;
+}
+#fixed-status-bar.visible { display: block; }
+.fsb-title { font-size:0.62rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:0.4rem;font-weight:700; }
+.fsb-grid { display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.4rem; }
+.fsb-btn { padding:0.6rem 0.2rem;border-radius:10px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);font-size:0.68rem;font-weight:700;cursor:pointer;text-align:center;font-family:inherit;transition:all 0.18s; }
+.fsb-ruta    { border-color:rgba(249,115,22,0.4);color:var(--accent); }
+.fsb-destino { border-color:rgba(96,165,250,0.4);color:var(--blue); }
+.fsb-ok      { border-color:rgba(34,197,94,0.4);color:var(--green); }
+.fsb-nov     { border-color:rgba(239,68,68,0.4);color:var(--red); }
 </style>
 </head>
 <body>
@@ -905,12 +924,12 @@ textarea.field-input {
             Cargando vehículos...
           </div>
         </div>
-        <div style="margin-bottom:0.75rem;text-align:center">
-          <a href="https://acerosturiadecolombia.github.io/aceros-turia/aceros-turia-portal.html"
-            style="font-size:0.75rem;color:var(--text-dim);text-decoration:none">← Volver al portal</a>
-        </div>
         <button class="btn-login" onclick="irAPasoPin()">Continuar →</button>
         <div id="error-vehiculo" style="font-size:0.75rem;color:var(--red);text-align:center;margin-top:8px;min-height:16px"></div>
+        <div style="margin-top:1rem;text-align:center">
+          <a href="https://acerosturiadecolombia.github.io/aceros-turia/aceros-turia-portal.html"
+            style="font-size:0.72rem;color:var(--text-dim);text-decoration:none;font-family:'Plus Jakarta Sans',sans-serif">← Volver al portal</a>
+        </div>
       </div>
 
       <!-- PASO 2: INGRESAR PIN -->
@@ -1531,6 +1550,18 @@ function renderStops() {
 }
 
 function toggleStop(i) {
+  const cardCheck = document.getElementById('stop-' + i);
+  const wasExpanded = cardCheck.classList.contains('expanded');
+  // Cerrar todas
+  document.querySelectorAll('.stop-card').forEach(c => c.classList.remove('expanded'));
+  if (!wasExpanded) {
+    cardCheck.classList.add('expanded');
+    showFixedBar(i);
+  } else {
+    hideFixedBar();
+  }
+  return;
+  // Original code below (unreachable but kept for reference)
   const card = document.getElementById('stop-' + i);
   card.classList.toggle('expanded');
 }
@@ -1822,6 +1853,41 @@ function showToast(icon, text, cls) {
   t._t = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+
+// ============================================================
+// BARRA FIJA DE ESTADO
+// ============================================================
+let fsbCurrentIdx = null;
+
+function showFixedBar(idx) {
+  fsbCurrentIdx = idx;
+  const s = stops[idx];
+  document.getElementById('fsb-cliente').textContent = s.cliente;
+  document.getElementById('fixed-status-bar').classList.add('visible');
+  document.getElementById('app-body').style.paddingBottom = '8rem';
+}
+
+function hideFixedBar() {
+  fsbCurrentIdx = null;
+  document.getElementById('fixed-status-bar').classList.remove('visible');
+  document.getElementById('app-body').style.paddingBottom = '5rem';
+}
+
+function fsbSetStatus(status) {
+  if (fsbCurrentIdx === null) return;
+  setStopStatus(fsbCurrentIdx, status);
+}
+
+function fsbConfirmar() {
+  if (fsbCurrentIdx === null) return;
+  askConfirmDelivery(fsbCurrentIdx);
+}
+
+function fsbNovedad() {
+  if (fsbCurrentIdx === null) return;
+  openNovedadModal(fsbCurrentIdx);
+}
+
 // Exponer funciones al scope global (necesario para onclick en HTML)
 window.toggleStop        = toggleStop;
 window.openMaps          = openMaps;
@@ -1839,6 +1905,11 @@ window.irAPasoPin        = irAPasoPin;
 window.volverAVehiculo   = volverAVehiculo;
 window.verificarPin      = verificarPin;
 window.startRoute        = startRoute;
+window.fsbSetStatus      = fsbSetStatus;
+window.fsbConfirmar      = fsbConfirmar;
+window.fsbNovedad        = fsbNovedad;
+window.showFixedBar      = showFixedBar;
+window.hideFixedBar      = hideFixedBar;
 window.confirmDelivery   = confirmDelivery;
 window.submitNovedad     = submitNovedad;
 
@@ -1846,5 +1917,15 @@ window.submitNovedad     = submitNovedad;
 initLogin();
 updateClock();
 </script>
+
+<div id="fixed-status-bar">
+  <div class="fsb-title" id="fsb-cliente">Estado del pedido</div>
+  <div class="fsb-grid">
+    <button class="fsb-btn fsb-ruta"    onclick="fsbSetStatus('en-ruta')">🚛 En ruta</button>
+    <button class="fsb-btn fsb-destino" onclick="fsbSetStatus('en-destino')">📍 Llegué</button>
+    <button class="fsb-btn fsb-ok"      onclick="fsbConfirmar()">✅ Entregado</button>
+    <button class="fsb-btn fsb-nov"     onclick="fsbNovedad()">⚠️ Novedad</button>
+  </div>
+</div>
 </body>
 </html>
