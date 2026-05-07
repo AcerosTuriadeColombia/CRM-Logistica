@@ -1140,7 +1140,7 @@ async function initLogin() {
   const grid = document.getElementById('driver-grid');
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-dim);font-size:0.8rem">Cargando vehículos...</div>';
 
-  const { data: vehiculos, error } = await supabase
+  const { data: vehiculos, error } = await sb
     .from('vehiculos')
     .select('id, nombre, conductor, tipo, pin')
     .eq('activo', true)
@@ -1197,7 +1197,7 @@ window.verificarPin = async function() {
   btn.disabled = true;
   btn.textContent = 'Verificando...';
 
-  const { data: v, error } = await supabase
+  const { data: v, error } = await sb
     .from('vehiculos')
     .select('id, nombre, conductor, pin')
     .eq('id', selectedDriverEl.vehicleId)
@@ -1236,7 +1236,7 @@ window.startRoute = async function() {
 
   // Cargar pedidos del día desde Supabase
   const hoy = new Date().toISOString().split('T')[0];
-  const { data: pedidos, error } = await supabase
+  const { data: pedidos, error } = await sb
     .from('pedidos')
     .select(`
       id, numero_pedido, cliente, obra, direccion, ciudad,
@@ -1320,7 +1320,7 @@ async function actualizarEstadoSupabase(pedidoId, status, nota = '') {
   } catch (_) { /* GPS no disponible, continuar sin él */ }
 
   // Actualizar pedido
-  const { error } = await supabase
+  const { error } = await sb
     .from('pedidos')
     .update({ status, gps_lat, gps_lng })
     .eq('id', pedidoId);
