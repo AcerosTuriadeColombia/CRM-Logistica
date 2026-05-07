@@ -1405,7 +1405,7 @@ function startRoute() {
     grouped[key].cantidad = grouped[key].items.reduce((a, it) => a + it.cantidad, 0);
   });
   stops = order.map(k => grouped[k]);
-  stopStatuses = stops.map(() => 'pendiente');
+  stopStatuses = stops.map(p => p.status || 'pendiente');
   startTime = new Date();
 
   document.getElementById('header-driver-name').textContent = `${currentDriver} · ${selectedDriverEl.vehicle}`;
