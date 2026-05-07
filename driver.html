@@ -909,6 +909,7 @@ textarea.field-input {
         <div id="error-vehiculo" style="font-size:0.75rem;color:var(--red);text-align:center;margin-top:8px;min-height:16px"></div>
         <div style="margin-top:1rem;text-align:center">
           <a href="https://acerosturiadecolombia.github.io/aceros-turia/aceros-turia-portal.html"
+            style="font-size:0.72rem;color:var(--text-dim);text-decoration:none;font-family:'Plus Jakarta Sans',sans-serif">← Volver al portal</a>
         </div>
       </div>
 
@@ -1139,7 +1140,7 @@ async function initLogin() {
   const grid = document.getElementById('driver-grid');
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-dim);font-size:0.8rem">Cargando vehículos...</div>';
 
-  const { data: vehiculos, error } = await sb
+  const { data: vehiculos, error } = await supabase
     .from('vehiculos')
     .select('id, nombre, conductor, tipo, pin')
     .eq('activo', true)
@@ -1196,7 +1197,7 @@ window.verificarPin = async function() {
   btn.disabled = true;
   btn.textContent = 'Verificando...';
 
-  const { data: v, error } = await sb
+  const { data: v, error } = await supabase
     .from('vehiculos')
     .select('id, nombre, conductor, pin')
     .eq('id', selectedDriverEl.vehicleId)
@@ -1235,7 +1236,7 @@ window.startRoute = async function() {
 
   // Cargar pedidos del día desde Supabase
   const hoy = new Date().toISOString().split('T')[0];
-  const { data: pedidos, error } = await sb
+  const { data: pedidos, error } = await supabase
     .from('pedidos')
     .select(`
       id, numero_pedido, cliente, obra, direccion, ciudad,
@@ -1246,7 +1247,7 @@ window.startRoute = async function() {
     .eq('vehiculo_id', currentVehicleId)
     .eq('fecha', hoy)
     .order('created_at', { ascending: true });
-style="font-size:0.72rem;color:var(--text-dim);text-decoration:none;font-family:'Plus Jakarta Sans',sans-serif">← Volver al portal</a>
+
   btn.textContent = 'Iniciar ruta →';
   btn.disabled = false;
 
@@ -1319,7 +1320,7 @@ async function actualizarEstadoSupabase(pedidoId, status, nota = '') {
   } catch (_) { /* GPS no disponible, continuar sin él */ }
 
   // Actualizar pedido
-  const { error } = await sb
+  const { error } = await supabase
     .from('pedidos')
     .update({ status, gps_lat, gps_lng })
     .eq('id', pedidoId);
