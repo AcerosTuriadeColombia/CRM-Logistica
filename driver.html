@@ -881,6 +881,50 @@ textarea.field-input {
 .stop-card:nth-child(2) { animation-delay: 0.1s; }
 .stop-card:nth-child(3) { animation-delay: 0.15s; }
 .stop-card:nth-child(4) { animation-delay: 0.2s; }
+
+/* FIXED STATUS BAR - aparece cuando se expande una parada */
+#fixed-status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border2);
+  padding: 0.75rem 1rem;
+  z-index: 100;
+  display: none;
+}
+#fixed-status-bar.visible { display: block; }
+.fixed-status-title {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+.fixed-status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0.4rem;
+}
+.fsb-btn {
+  padding: 0.6rem 0.25rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  font-family: inherit;
+  transition: all 0.18s;
+}
+.fsb-ruta    { border-color: rgba(249,115,22,0.4); color: var(--accent); }
+.fsb-destino { border-color: rgba(96,165,250,0.4); color: var(--blue); }
+.fsb-ok      { border-color: rgba(34,197,94,0.4);  color: var(--green); }
+.fsb-nov     { border-color: rgba(239,68,68,0.4);  color: var(--red); }
 </style>
 </head>
 <body>
@@ -1478,7 +1522,6 @@ function renderStops() {
       </div>
       <div class="stop-detail" id="stop-detail-${i}">
         <div class="stop-detail-inner">
-          ${stopButtons}
           <div class="detail-row">
             <span class="dr-label"># Pedido</span>
             <span class="dr-value mono text-accent">${s.pedido}</span>
@@ -1524,6 +1567,7 @@ function renderStops() {
           <button class="btn-maps" onclick="openMaps(${i})">
             🗺️ Abrir en Google Maps
           </button>
+          ${stopButtons}
         </div>
       </div>
     </div>`;
@@ -1532,6 +1576,16 @@ function renderStops() {
 
 function toggleStop(i) {
   const card = document.getElementById('stop-' + i);
+  const wasExpanded = card.classList.contains('expanded');
+  // Cerrar todas las demás
+  document.querySelectorAll('.stop-card').forEach(c => c.classList.remove('expanded'));
+  if (!wasExpanded) {
+    card.classList.add('expanded');
+    showFixedBar(i);
+  } else {
+    hideFixedBar();
+  }
+  return; // skip default behavior below
   card.classList.toggle('expanded');
 }
 
@@ -1822,6 +1876,42 @@ function showToast(icon, text, cls) {
   t._t = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+
+// ============================================================
+// BARRA FIJA DE ESTADO
+// ============================================================
+let fsbCurrentIdx = null;
+
+function showFixedBar(idx) {
+  fsbCurrentIdx = idx;
+  const s = stops[idx];
+  document.getElementById('fsb-cliente').textContent = s.cliente;
+  document.getElementById('fixed-status-bar').classList.add('visible');
+  // Agregar padding bottom al app-body para que no tape contenido
+  document.getElementById('app-body').style.paddingBottom = '8rem';
+}
+
+function hideFixedBar() {
+  fsbCurrentIdx = null;
+  document.getElementById('fixed-status-bar').classList.remove('visible');
+  document.getElementById('app-body').style.paddingBottom = '5rem';
+}
+
+function fsbSetStatus(status) {
+  if (fsbCurrentIdx === null) return;
+  setStopStatus(fsbCurrentIdx, status);
+}
+
+function fsbConfirmar() {
+  if (fsbCurrentIdx === null) return;
+  askConfirmDelivery(fsbCurrentIdx);
+}
+
+function fsbNovedad() {
+  if (fsbCurrentIdx === null) return;
+  openNovedadModal(fsbCurrentIdx);
+}
+
 // Exponer funciones al scope global (necesario para onclick en HTML)
 window.toggleStop        = toggleStop;
 window.openMaps          = openMaps;
@@ -1839,6 +1929,11 @@ window.irAPasoPin        = irAPasoPin;
 window.volverAVehiculo   = volverAVehiculo;
 window.verificarPin      = verificarPin;
 window.startRoute        = startRoute;
+window.showFixedBar      = showFixedBar;
+window.hideFixedBar      = hideFixedBar;
+window.fsbSetStatus      = fsbSetStatus;
+window.fsbConfirmar      = fsbConfirmar;
+window.fsbNovedad        = fsbNovedad;
 window.confirmDelivery   = confirmDelivery;
 window.submitNovedad     = submitNovedad;
 
@@ -1846,5 +1941,16 @@ window.submitNovedad     = submitNovedad;
 initLogin();
 updateClock();
 </script>
+
+<!-- FIXED STATUS BAR -->
+<div id="fixed-status-bar">
+  <div class="fixed-status-title" id="fsb-cliente">Estado del pedido</div>
+  <div class="fixed-status-grid">
+    <button class="fsb-btn fsb-ruta"    onclick="fsbSetStatus('en-ruta')">🚛 En ruta</button>
+    <button class="fsb-btn fsb-destino" onclick="fsbSetStatus('en-destino')">📍 Llegué</button>
+    <button class="fsb-btn fsb-ok"      onclick="fsbConfirmar()">✅ Entregado</button>
+    <button class="fsb-btn fsb-nov"     onclick="fsbNovedad()">⚠️ Novedad</button>
+  </div>
+</div>
 </body>
 </html>
