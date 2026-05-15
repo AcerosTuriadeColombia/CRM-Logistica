@@ -98,7 +98,7 @@
 @keyframes monPulse { 0%{transform:scale(0.8);opacity:0.6} 100%{transform:scale(2);opacity:0} }
 .mon-filter.active { background:rgba(249,115,22,0.12)!important;border-color:rgba(249,115,22,0.3)!important;color:var(--accent)!important; }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root {
   --bg: #0f1117;
@@ -812,6 +812,69 @@ header {
   to   { transform:translateY(0);opacity:1; }
 }
 </style>
+
+<!-- PANEL MONITOR -->
+<div id="panel-monitor" style="display:none;padding:1.25rem 2rem">
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.75rem;margin-bottom:1.25rem">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem"><div style="font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px">Activos</div><div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--accent)" id="mon-activos">—</div></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem"><div style="font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px">En ruta</div><div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--accent)" id="mon-ruta">—</div></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem"><div style="font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px">En destino</div><div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#60a5fa" id="mon-destino">—</div></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem"><div style="font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px">Entregados</div><div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--green)" id="mon-entregados">—</div></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem"><div style="font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px">Novedades</div><div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--red)" id="mon-novedades">—</div></div>
+  </div>
+  <div style="display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-ghost btn-sm mon-filter active" onclick="setMonFilter('todos',this)">Todos</button>
+    <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('en-ruta',this)" style="color:var(--accent)">🚛 En ruta</button>
+    <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('en-destino',this)" style="color:#60a5fa">📍 En destino</button>
+    <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('entregado',this)" style="color:var(--green)">✅ Entregados</button>
+    <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('novedad',this)" style="color:var(--red)">⚠️ Novedad</button>
+    <input type="text" id="mon-search" placeholder="🔍 Buscar..." oninput="renderMonitor()" style="margin-left:auto;padding:0.4rem 0.9rem;background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:0.78rem;font-family:inherit;outline:none;width:200px">
+    <span style="font-size:0.72rem;color:var(--text-dim)" id="mon-update">—</span>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;min-width:900px">
+      <thead style="background:var(--surface2)">
+        <tr>
+          <th style="padding:0.65rem 0.85rem;text-align:left;font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);font-weight:700">Vehículo / Conductor</th>
+          <th style="padding:0.65rem 0.85rem;text-align:left;font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);font-weight:700">Asesor Comercial</th>
+          <th style="padding:0.65rem 0.85rem;text-align:left;font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);font-weight:700">Cliente</th>
+          <th style="padding:0.65rem 0.85rem;text-align:left;font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);font-weight:700">Producto</th>
+          <th style="padding:0.65rem 0.85rem;text-align:right;font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);font-weight:700">Kilos</th>
+          <th style="padding:0.65rem 0.85rem;text-align:right;font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);font-weight:700">Uds</th>
+          <th style="padding:0.65rem 0.85rem;font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);font-weight:700">Estado</th>
+          <th style="padding:0.65rem 0.85rem;font-size:0.6rem;text-transform:uppercase;color:var(--text-dim);font-weight:700">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="mon-tbody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-dim)">Cargando...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="mon-modal-ubicacion" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:1.5rem;width:100%;max-width:440px">
+    <div style="font-size:1rem;font-weight:800;margin-bottom:4px" id="mon-loc-title">Ubicación</div>
+    <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:1rem" id="mon-loc-sub">—</div>
+    <div style="background:var(--surface2);border-radius:12px;height:160px;position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:1rem">
+      <div style="font-size:3rem">🚛</div>
+      <div style="position:absolute;bottom:10px;font-size:0.68rem;color:var(--text-dim)" id="mon-loc-coords">Sin GPS</div>
+    </div>
+    <div id="mon-loc-detail" style="margin-bottom:1rem;font-size:0.78rem"></div>
+    <div style="display:flex;gap:0.6rem">
+      <button onclick="document.getElementById('mon-modal-ubicacion').style.display='none'" style="flex:1;padding:0.65rem;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text-mid);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">Cerrar</button>
+      <button id="mon-maps-btn" style="flex:2;padding:0.65rem;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.25);border-radius:10px;color:#60a5fa;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit">🗺️ Google Maps</button>
+    </div>
+  </div>
+</div>
+
+<div id="mon-modal-remision" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;align-items:center;justify-content:center;padding:1rem">
+  <div style="width:100%;max-width:500px;position:relative">
+    <button onclick="document.getElementById('mon-modal-remision').style.display='none'" style="position:absolute;top:-44px;right:0;background:none;border:none;color:white;font-size:1.8rem;cursor:pointer">✕</button>
+    <img id="mon-remision-img" style="width:100%;border-radius:12px;border:1px solid rgba(255,255,255,0.1)">
+    <a id="mon-remision-link" href="" target="_blank" style="display:block;margin-top:0.75rem;padding:0.7rem;background:rgba(255,255,255,0.08);border-radius:8px;text-align:center;color:white;text-decoration:none;font-size:0.8rem;font-weight:600">⬇️ Abrir en pantalla completa</a>
+  </div>
+</div>
+
+<style>.mon-filter.active{background:rgba(249,115,22,0.12)!important;border-color:rgba(249,115,22,0.3)!important;color:var(--accent)!important}</style>
 
 <script>
 // ============================================================
