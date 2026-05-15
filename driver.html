@@ -595,7 +595,67 @@ async function iniciarRuta() {
   updateProgress();
   switchScreen('screen-main');
   toast('🚛', `Ruta iniciada · ${stops.length} paradas`, 'toast-orange');
+
+  // Iniciar tracking GPS continuo cada 45 segundos
+  iniciarTrackingGPS();
 }
+
+// ============================================================
+// TRACKING GPS CONTINUO
+// ============================================================
+let gpsInterval = null;
+let gpsWatchId  = null;
+
+function iniciarTrackingGPS() {
+  if (!navigator.geolocation) return;
+
+  // Actualizar GPS cada 45 segundos
+  gpsInterval = setInterval(async () => {
+    try {
+      const pos = await new Promise((res, rej) =>
+        navigator.geolocation.getCurrentPosition(res, rej, {
+          timeout: 8000, enableHighAccuracy: true, maximumAge: 30000
+        })
+      );
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      // Actualizar TODOS los pedidos activos del vehículo con la posición actual
+      const pedidosActivos = stopIds.filter((id, i) =>
+        id && ['en-ruta','en-destino','pendiente'].includes(stopStatuses[i])
+      );
+
+      for (const pedidoId of pedidosActivos) {
+        await sb.from('pedidos')
+          .update({ gps_lat: lat, gps_lng: lng })
+          .eq('id', pedidoId);
+      }
+
+      // Actualizar chip GPS en el header
+      const chip = document.querySelector('.gps-chip');
+      if (chip) chip.style.opacity = '1';
+
+    } catch (e) {
+      // GPS no disponible - oscurecer el chip
+      const chip = document.querySelector('.gps-chip');
+      if (chip) chip.style.opacity = '0.4';
+    }
+  }, 45000);
+
+  // Primera actualización inmediata
+  setTimeout(async () => {
+    try {
+      const pos = await new Promise((res, rej) =>
+        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000, enableHighAccuracy: true })
+      );
+      const pedidosActivos = stopIds.filter((id, i) =>
+        id && ['en-ruta','en-destino','pendiente'].includes(stopStatuses[i])
+      );
+      for (const pedidoId of pedidosActivos) {
+        await sb.from('pedidos').update({ gps_lat: pos.coords.latitude, gps_lng: pos.coords.longitude }).eq('id', pedidoId);
+      }
+    } catch (e) {}
+  }, 3000);
 
 // ============================================================
 // RENDER STOPS
@@ -893,6 +953,8 @@ function abrirMaps(i) {
 // ============================================================
 function salir() {
   if (clockInterval) clearInterval(clockInterval);
+  if (gpsInterval)   clearInterval(gpsInterval);
+  if (gpsWatchId)    navigator.geolocation.clearWatch(gpsWatchId);
   ocultarStatusBar();
   selectedVehiculo = null;
   stops = []; stopStatuses = []; stopIds = [];
