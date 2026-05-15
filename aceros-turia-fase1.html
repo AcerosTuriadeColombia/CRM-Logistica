@@ -5,7 +5,99 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aceros Turia · Fase 1 — Programación del día</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- MONITOR PANEL -->
+<div id="panel-monitor" style="display:none;padding:1.25rem 2rem">
+
+  <!-- Stats monitor -->
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.75rem;margin-bottom:1.25rem" id="mon-stats">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem">
+      <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);margin-bottom:5px">Activos</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--accent)" id="mon-activos">—</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem">
+      <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);margin-bottom:5px">En ruta</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--accent)" id="mon-ruta">—</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem">
+      <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);margin-bottom:5px">En destino</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#60a5fa" id="mon-destino">—</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem">
+      <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);margin-bottom:5px">Entregados</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--green)" id="mon-entregados">—</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem">
+      <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);margin-bottom:5px">Novedades</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--red)" id="mon-novedades">—</div>
+    </div>
+  </div>
+
+  <!-- Filter toolbar -->
+  <div style="display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-ghost btn-sm mon-filter active" onclick="setMonFilter('todos',this)">Todos</button>
+    <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('en-ruta',this)" style="color:var(--accent)">🚛 En ruta</button>
+    <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('en-destino',this)" style="color:#60a5fa">📍 En destino</button>
+    <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('entregado',this)" style="color:var(--green)">✅ Entregados</button>
+    <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('novedad',this)" style="color:var(--red)">⚠️ Novedad</button>
+    <input type="text" id="mon-search" placeholder="🔍 Buscar cliente..." oninput="renderMonitor()"
+      style="margin-left:auto;padding:0.4rem 0.9rem;background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:0.78rem;font-family:inherit;outline:none;width:200px">
+    <span style="font-size:0.72rem;color:var(--text-dim)" id="mon-update">—</span>
+  </div>
+
+  <!-- Table -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse">
+      <thead style="background:var(--surface2)">
+        <tr>
+          <th style="padding:0.65rem 0.85rem;text-align:left;font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);font-weight:700">Vehículo / Conductor</th>
+          <th style="padding:0.65rem 0.85rem;text-align:left;font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);font-weight:700">Asesor Comercial</th>
+          <th style="padding:0.65rem 0.85rem;text-align:left;font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);font-weight:700">Cliente</th>
+          <th style="padding:0.65rem 0.85rem;text-align:left;font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);font-weight:700">Producto</th>
+          <th style="padding:0.65rem 0.85rem;text-align:right;font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);font-weight:700">Kilos</th>
+          <th style="padding:0.65rem 0.85rem;text-align:right;font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);font-weight:700">Uds</th>
+          <th style="padding:0.65rem 0.85rem;text-align:left;font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);font-weight:700">Estado</th>
+          <th style="padding:0.65rem 0.85rem;text-align:left;font-size:0.6rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);font-weight:700">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="mon-tbody">
+        <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-dim);font-size:0.82rem">Cargando pedidos...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL UBICACIÓN -->
+<div id="mon-modal-ubicacion" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:1.5rem;width:100%;max-width:440px">
+    <div style="font-size:1rem;font-weight:800;margin-bottom:4px" id="mon-loc-title">Ubicación</div>
+    <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:1rem" id="mon-loc-sub">—</div>
+    <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:12px;height:180px;position:relative;overflow:hidden;margin-bottom:1rem;display:flex;align-items:center;justify-content:center">
+      <div style="font-size:3rem;position:relative;z-index:2">🚛</div>
+      <div style="position:absolute;width:60px;height:60px;border-radius:50%;border:2px solid var(--accent);animation:monPulse 1.5s ease-out infinite"></div>
+      <div style="position:absolute;bottom:10px;font-size:0.68rem;color:var(--text-dim)" id="mon-loc-coords">Sin GPS</div>
+    </div>
+    <div id="mon-loc-detail" style="font-size:0.78rem;color:var(--text-mid);margin-bottom:1rem"></div>
+    <div style="display:flex;gap:0.6rem">
+      <button onclick="document.getElementById('mon-modal-ubicacion').style.display='none'" style="flex:1;padding:0.65rem;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text-mid);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">Cerrar</button>
+      <button id="mon-maps-btn" style="flex:2;padding:0.65rem;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.25);border-radius:10px;color:#60a5fa;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit">🗺️ Abrir en Google Maps</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REMISIÓN -->
+<div id="mon-modal-remision" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;align-items:center;justify-content:center;padding:1rem">
+  <div style="width:100%;max-width:500px;position:relative">
+    <button onclick="document.getElementById('mon-modal-remision').style.display='none'" style="position:absolute;top:-44px;right:0;background:none;border:none;color:white;font-size:1.8rem;cursor:pointer">✕</button>
+    <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:0.75rem">📄 Remisión firmada</div>
+    <img id="mon-remision-img" style="width:100%;border-radius:12px;border:1px solid rgba(255,255,255,0.1)">
+    <a id="mon-remision-link" href="" target="_blank" style="display:block;margin-top:0.75rem;padding:0.7rem;background:rgba(255,255,255,0.08);border-radius:8px;text-align:center;color:white;text-decoration:none;font-size:0.8rem;font-weight:600">⬇️ Abrir en pantalla completa</a>
+  </div>
+</div>
+
+<style>
+@keyframes monPulse { 0%{transform:scale(0.8);opacity:0.6} 100%{transform:scale(2);opacity:0} }
+.mon-filter.active { background:rgba(249,115,22,0.12)!important;border-color:rgba(249,115,22,0.3)!important;color:var(--accent)!important; }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root {
@@ -576,11 +668,23 @@ header {
 <header id="main-header" style="display:none">
   <div class="logo">Aceros <em>Turia</em></div>
   <div class="header-right">
-    <span class="phase-tag">Fase 1 · Programación</span>
-    <button class="btn btn-ghost btn-sm" onclick="loadDemo()">📋 Cargar demo</button>
+    <span class="phase-tag" id="phase-tag">Fase 1 · Programación</span>
+    <button class="btn btn-ghost btn-sm" onclick="loadDemo()" id="btn-demo">📋 Cargar demo</button>
     <a href="https://acerosturiadecolombia.github.io/aceros-turia/aceros-turia-portal.html" class="btn btn-ghost btn-sm">← Portal</a>
   </div>
 </header>
+
+<!-- TABS -->
+<div id="main-tabs" style="display:none;background:var(--surface);border-bottom:1px solid var(--border2);display:none">
+  <div style="display:flex;padding:0 2rem">
+    <div id="tab-prog" onclick="switchMainTab('programacion')" style="padding:0 1.25rem;height:44px;display:flex;align-items:center;gap:6px;font-size:0.82rem;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer;transition:all 0.2s">
+      📋 Programación
+    </div>
+    <div id="tab-monitor" onclick="switchMainTab('monitor')" style="padding:0 1.25rem;height:44px;display:flex;align-items:center;gap:6px;font-size:0.82rem;font-weight:600;color:var(--text-dim);border-bottom:2px solid transparent;cursor:pointer;transition:all 0.2s">
+      📡 Monitor en vivo
+    </div>
+  </div>
+</div>
 
 <!-- TOAST -->
 <div class="toast" id="toast">
@@ -753,6 +857,7 @@ function loginFase1() {
   // Login exitoso
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-header').style.display = 'flex';
+  document.getElementById('main-tabs').style.display = 'block';
   document.getElementById('planta-bar').style.display = 'flex';
 
   // Preseleccionar la planta
@@ -1443,6 +1548,147 @@ function showToast(icon, title, sub) {
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.classList.remove('show'), 3500);
 }
-</script>
+
+// ============================================================
+// TABS PRINCIPALES
+// ============================================================
+function switchMainTab(tab) {
+  const isProg = tab === 'programacion';
+  document.getElementById('tab-prog').style.color        = isProg ? 'var(--accent)' : 'var(--text-dim)';
+  document.getElementById('tab-prog').style.borderBottom = isProg ? '2px solid var(--accent)' : '2px solid transparent';
+  document.getElementById('tab-monitor').style.color        = !isProg ? 'var(--accent)' : 'var(--text-dim)';
+  document.getElementById('tab-monitor').style.borderBottom = !isProg ? '2px solid var(--accent)' : '2px solid transparent';
+  document.querySelector('.container').style.display      = isProg ? 'block' : 'none';
+  document.getElementById('panel-monitor').style.display  = isProg ? 'none' : 'block';
+  document.getElementById('planta-bar').style.display     = isProg ? 'flex' : 'none';
+  document.getElementById('btn-demo').style.display       = isProg ? '' : 'none';
+  if (!isProg) {
+    cargarMonitor();
+    if (!monInterval) monInterval = setInterval(cargarMonitor, 45000);
+  } else {
+    if (monInterval) { clearInterval(monInterval); monInterval = null; }
+  }
+}
+
+// ============================================================
+// MONITOR
+// ============================================================
+let monPedidos  = [];
+let monFiltro   = 'todos';
+let monInterval = null;
+
+async function cargarMonitor() {
+  const hoy = new Date().toISOString().split('T')[0];
+  const planta = plantaSeleccionada || plantaLoginSeleccionada || 'amaga';
+  const { data, error } = await sb
+    .from('pedidos')
+    .select(`id, numero_pedido, cliente, obra, direccion, ciudad,
+      status, total_kilos, total_cantidad, gps_lat, gps_lng, foto_remision_url,
+      vendedores (nombre), vehiculos (nombre, conductor, placa, tipo),
+      items_pedido (descripcion, cantidad, kilos)`)
+    .eq('fecha', hoy).eq('planta', planta)
+    .order('created_at', { ascending: true });
+  if (error) return;
+  monPedidos = data || [];
+  renderMonitorStats();
+  renderMonitor();
+  const el = document.getElementById('mon-update');
+  if (el) el.textContent = `Actualizado: ${new Date().toLocaleTimeString('es-CO')}`;
+}
+
+function renderMonitorStats() {
+  const activos = new Set(monPedidos.filter(p => p.status !== 'pendiente').map(p => p.vehiculos?.nombre)).size;
+  document.getElementById('mon-activos').textContent    = activos;
+  document.getElementById('mon-ruta').textContent       = monPedidos.filter(p => p.status === 'en-ruta').length;
+  document.getElementById('mon-destino').textContent    = monPedidos.filter(p => p.status === 'en-destino').length;
+  document.getElementById('mon-entregados').textContent = monPedidos.filter(p => p.status === 'entregado').length;
+  document.getElementById('mon-novedades').textContent  = monPedidos.filter(p => p.status === 'novedad').length;
+}
+
+function setMonFilter(f, el) {
+  monFiltro = f;
+  document.querySelectorAll('.mon-filter').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderMonitor();
+}
+
+function renderMonitor() {
+  const q = (document.getElementById('mon-search')?.value || '').toLowerCase();
+  let pedidos = monFiltro === 'todos' ? monPedidos : monPedidos.filter(p => p.status === monFiltro);
+  if (q) pedidos = pedidos.filter(p =>
+    p.cliente?.toLowerCase().includes(q) ||
+    p.vendedores?.nombre?.toLowerCase().includes(q) ||
+    p.vehiculos?.nombre?.toLowerCase().includes(q) ||
+    String(p.numero_pedido).includes(q));
+
+  const badgeMap = {
+    pendiente:   'background:rgba(124,132,153,0.12);color:#8899b8',
+    'en-ruta':   'background:rgba(249,115,22,0.12);color:var(--accent)',
+    'en-destino':'background:rgba(96,165,250,0.12);color:#60a5fa',
+    entregado:   'background:rgba(34,197,94,0.12);color:var(--green)',
+    novedad:     'background:rgba(239,68,68,0.12);color:var(--red)',
+  };
+  const badgeLabel = { pendiente:'⏳ En planta','en-ruta':'🚛 En ruta','en-destino':'📍 En destino',entregado:'✅ Entregado',novedad:'⚠️ Novedad' };
+
+  const tbody = document.getElementById('mon-tbody');
+  if (!tbody) return;
+  if (!pedidos.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-dim);font-size:0.82rem">Sin pedidos con este filtro</td></tr>';
+    return;
+  }
+  tbody.innerHTML = pedidos.map(p => {
+    const v=p.vehiculos||{}, vd=p.vendedores||{}, it=p.items_pedido?.[0]||{};
+    const tieneGps=p.gps_lat&&p.gps_lng, tieneRem=!!p.foto_remision_url;
+    const bs = badgeMap[p.status]||badgeMap.pendiente;
+    const bl = badgeLabel[p.status]||'—';
+    return `<tr style="border-top:1px solid var(--border)">
+      <td style="padding:0.85rem"><div style="font-weight:700;font-size:0.8rem">${v.nombre||'—'}</div><div style="font-size:0.68rem;color:var(--text-dim)">${v.conductor||'—'} · ${v.placa||'—'}</div></td>
+      <td style="padding:0.85rem;color:var(--text-mid);font-size:0.78rem">${vd.nombre||'—'}</td>
+      <td style="padding:0.85rem"><div style="font-weight:600;font-size:0.78rem">${p.cliente}</div><div style="font-size:0.68rem;color:var(--text-dim)">#${p.numero_pedido}</div></td>
+      <td style="padding:0.85rem;max-width:160px"><div style="font-size:0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.descripcion||'—'}</div>${p.items_pedido?.length>1?`<div style="font-size:0.65rem;color:var(--text-dim)">${p.items_pedido.length} ítems</div>`:''}</td>
+      <td style="padding:0.85rem;text-align:right;font-family:monospace;font-size:0.72rem;color:var(--accent)">${(p.total_kilos||0).toLocaleString('es-CO')}</td>
+      <td style="padding:0.85rem;text-align:right;font-family:monospace;font-size:0.72rem;color:var(--text-mid)">${(p.total_cantidad||0).toLocaleString('es-CO')}</td>
+      <td style="padding:0.85rem"><span style="display:inline-flex;padding:3px 9px;border-radius:20px;font-size:0.65rem;font-weight:700;${bs}">${bl}</span></td>
+      <td style="padding:0.85rem"><div style="display:flex;gap:0.35rem">
+        <button title="Ubicación" onclick="monVerUbicacion('${p.id}')" style="width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:0.82rem;opacity:${tieneGps?1:0.4}">📍</button>
+        <button title="Remisión" onclick="monVerRemision('${p.foto_remision_url||''}')" style="width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:0.82rem;opacity:${tieneRem?1:0.4}">📄</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function monVerUbicacion(id) {
+  const p = monPedidos.find(x => x.id === id); if (!p) return;
+  const v = p.vehiculos||{};
+  document.getElementById('mon-loc-title').textContent = v.nombre||'—';
+  document.getElementById('mon-loc-sub').textContent   = `${v.conductor||'—'} · ${v.placa||'—'}`;
+  if (p.gps_lat && p.gps_lng) {
+    document.getElementById('mon-loc-coords').textContent = `GPS: ${p.gps_lat.toFixed(5)}, ${p.gps_lng.toFixed(5)}`;
+    document.getElementById('mon-maps-btn').onclick = () => window.open(`https://www.google.com/maps?q=${p.gps_lat},${p.gps_lng}`, '_blank');
+    document.getElementById('mon-loc-detail').innerHTML = `<div style="background:var(--surface2);border-radius:8px;padding:0.65rem;font-size:0.75rem">📍 Última posición · ${new Date().toLocaleTimeString('es-CO')}</div>`;
+  } else {
+    document.getElementById('mon-loc-coords').textContent = 'Sin GPS aún';
+    document.getElementById('mon-maps-btn').onclick = () => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.direccion+', '+p.ciudad)}`, '_blank');
+    document.getElementById('mon-loc-detail').innerHTML = `<div style="background:rgba(239,68,68,0.07);border-radius:8px;padding:0.65rem;font-size:0.75rem;color:var(--text-mid)">⚠️ El conductor aún no actualizó su GPS.</div>`;
+  }
+  document.getElementById('mon-modal-ubicacion').style.display = 'flex';
+}
+
+function monVerRemision(url) {
+  if (!url) { showToast('ℹ️', 'Remisión no disponible', ''); return; }
+  document.getElementById('mon-remision-img').src  = url;
+  document.getElementById('mon-remision-link').href = url;
+  document.getElementById('mon-modal-remision').style.display = 'flex';
+}
+
+document.getElementById('mon-modal-ubicacion').addEventListener('click', e => {
+  if (e.target === document.getElementById('mon-modal-ubicacion'))
+    document.getElementById('mon-modal-ubicacion').style.display = 'none';
+});
+document.getElementById('mon-modal-remision').addEventListener('click', e => {
+  if (e.target === document.getElementById('mon-modal-remision'))
+    document.getElementById('mon-modal-remision').style.display = 'none';
+});
 </body>
 </html>
+</script></body></html>
