@@ -1101,11 +1101,20 @@ function parseAcerosTuriaFormat(rows) {
     }
   }
 
-  // Agrupar por conductor para mostrar en UI (conductor null = sin asignar)
+  // Agrupar por conductor para mostrar en UI
+  // Si conductor es null (columnas vacías en Excel), todos van al grupo SIN ASIGNAR
+  // El supervisor logístico los asignará desde la UI
   const grouped = {};
   pedidos.forEach(p => {
     const key = p.conductor || '__SIN_ASIGNAR__';
-    if (!grouped[key]) grouped[key] = { vehicle: p.conductor || 'SIN ASIGNAR', placa: p.placa, tipo: p.tipo, orders: [], totalKg: 0 };
+    if (!grouped[key]) grouped[key] = {
+      vehicle:    p.conductor || 'SIN ASIGNAR',
+      placa:      p.placa || null,
+      tipo:       p.tipo  || null,
+      orders:     [],
+      totalKg:    0,
+      sinAsignar: !p.conductor
+    };
     grouped[key].orders.push(p);
     grouped[key].totalKg += p.kilos;
   });
