@@ -1332,6 +1332,35 @@ function animateNumber(id, target) {
   }, 30);
 }
 
+
+function renderOrderRow(o, oi, vi, sinAsignar) {
+  const chkCell = sinAsignar
+    ? '<td onclick="event.stopPropagation()" style="width:2rem;text-align:center;vertical-align:middle">' +
+      '<input type="checkbox" class="order-chk" data-vi="' + vi + '" data-oi="' + oi + '" ' +
+      'style="width:1rem;height:1rem;cursor:pointer;accent-color:var(--accent)"></td>'
+    : '';
+  return `
+    <tr>
+      ${chkCell}
+      <td><span class="order-num">${o.pedido || '—'}</span></td>
+      <td>
+        <div class="client-name">${o.cliente}</div>
+        <div class="client-vendor">${o.vendedor}</div>
+      </td>
+      <td>
+        <div class="product-name">${o.descripcion}</div>
+        <div class="product-detail">Cant: ${o.cantidad}</div>
+      </td>
+      <td class="kg-val" style="color:var(--text-dim)">${o.cantidad.toLocaleString('es-CO')}</td>
+      <td class="kg-val" style="color:var(--accent)">${o.kilos.toLocaleString('es-CO')}</td>
+      <td><span class="city-badge">${o.ciudad || '—'}</span></td>
+      <td>
+        <div style="font-size:0.75rem">${o.obra || '—'}</div>
+        <div style="font-size:0.68rem;color:var(--text-dim)">${o.direccion || ''}</div>
+      </td>
+    </tr>`;
+}
+
 function renderVehicles(data) {
   const grid = document.getElementById('vehicles-grid');
 
@@ -1391,27 +1420,8 @@ function renderVehicles(data) {
             </tr>
           </thead>
           <tbody>
-            ${v.orders.map((o, oi) => `
-              <tr>
-                ${v.sinAsignar ? `<td onclick="event.stopPropagation()" style="width:2rem;text-align:center"><input type="checkbox" class="order-chk" data-vi="${vi}" data-oi="${oi}" style="width:1rem;height:1rem;cursor:pointer;accent-color:var(--accent)"></td>` : ''}
-                <td><span class="order-num">${o.pedido || '—'}</span></td>
-                <td>
-                  <div class="client-name">${o.cliente}</div>
-                  <div class="client-vendor">${o.vendedor}</div>
-                </td>
-                <td>
-                  <div class="product-name">${o.descripcion}</div>
-                  <div class="product-detail">Cant: ${o.cantidad}</div>
-                </td>
-                <td class="kg-val" style="color:var(--text-dim)">${o.cantidad.toLocaleString('es-CO')}</td>
-                <td class="kg-val" style="color:var(--accent)">${o.kilos.toLocaleString('es-CO')}</td>
-                <td><span class="city-badge">${o.ciudad || '—'}</span></td>
-                <td>
-                  <div style="font-size:0.75rem">${o.obra || '—'}</div>
-                  <div style="font-size:0.68rem;color:var(--text-dim)">${o.direccion || ''}</div>
-                </td>
-              </tr>
-            `).join('')}
+            ${v.orders.map((o, oi) => renderOrderRow(o, oi, vi, v.sinAsignar)).join('')}
+
           </tbody>
         </table>
         <div class="vehicle-footer" style="flex-wrap:wrap;gap:0.5rem">
