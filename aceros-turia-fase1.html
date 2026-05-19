@@ -1351,7 +1351,7 @@ function renderVehicles(data) {
         <div class="vehicle-icon">${v.vehicle === 'SIN ASIGNAR' ? '❓' : getVehicleIcon(v.tipo || v.vehicle)}</div>
         <div style="flex:1">
           <div class="vehicle-name" style="${v.vehicle === 'SIN ASIGNAR' ? 'color:var(--yellow)' : ''}">${v.vehicle}${v.placa ? ` · ${v.placa}` : ''}
-            ${v.sinAsignar ? `<button class="btn-asignar-vehiculo" onclick="event.stopPropagation();abrirModalAsignar()">+ Asignar vehículo</button>` : ''}
+
           </div>
           <div class="vehicle-meta">${v.orders.length} pedido${v.orders.length!==1?'s':''} · ${cities || 'Sin ciudad'}</div>
         </div>
@@ -1380,6 +1380,7 @@ function renderVehicles(data) {
         <table class="orders-table">
           <thead>
             <tr>
+              ${v.sinAsignar ? '<th style=\"width:2rem\"></th>' : ''}
               <th># Pedido</th>
               <th>Cliente / Vendedor</th>
               <th>Artículo</th>
@@ -1390,8 +1391,9 @@ function renderVehicles(data) {
             </tr>
           </thead>
           <tbody>
-            ${v.orders.map(o => `
+            ${v.orders.map((o, oi) => `
               <tr>
+                ${v.sinAsignar ? `<td onclick="event.stopPropagation()" style="width:2rem;text-align:center"><input type="checkbox" class="order-chk" data-vi="${vi}" data-oi="${oi}" style="width:1rem;height:1rem;cursor:pointer;accent-color:var(--accent)"></td>` : ''}
                 <td><span class="order-num">${o.pedido || '—'}</span></td>
                 <td>
                   <div class="client-name">${o.cliente}</div>
@@ -1412,9 +1414,16 @@ function renderVehicles(data) {
             `).join('')}
           </tbody>
         </table>
-        <div class="vehicle-footer">
+        <div class="vehicle-footer" style="flex-wrap:wrap;gap:0.5rem">
           <span class="total-label">Total carga:</span>
           <span class="total-value">${v.totalKg.toLocaleString('es-CO')} kg</span>
+          ${v.sinAsignar ? `
+          <div style="display:flex;gap:0.5rem;margin-left:auto;align-items:center">
+            <label style="font-size:0.75rem;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;gap:0.3rem">
+              <input type="checkbox" id="chk-all-${vi}" onchange="toggleTodosOrders(${vi},this.checked)" style="accent-color:var(--accent)"> Todos
+            </label>
+            <button class="btn-asignar-vehiculo" onclick="abrirModalAsignar(${vi})">🚛 Asignar vehículo</button>
+          </div>` : ''}
         </div>
       </div>
     </div>`;
@@ -1885,7 +1894,8 @@ document.getElementById('mon-modal-remision').addEventListener('click', e => {
 let _conductoresCache = null;
 let _vehiculosCache   = null;
 
-async function abrirModalAsignar() {
+async function abrirModalAsignar(vi) {
+  window._asignarVi = vi;
   document.getElementById('modal-asignar').classList.add('open');
   document.getElementById('modal-asignar-loading').style.display = 'block';
   document.getElementById('modal-asignar-form').style.display    = 'none';
@@ -1938,6 +1948,11 @@ async function abrirModalAsignar() {
   }
 }
 
+
+function toggleTodosOrders(vi, checked) {
+  document.querySelectorAll(`.order-chk[data-vi="${vi}"]`).forEach(chk => chk.checked = checked);
+}
+
 function cerrarModalAsignar() {
   document.getElementById('modal-asignar').classList.remove('open');
 }
@@ -1957,24 +1972,54 @@ function confirmarAsignacion() {
     return;
   }
 
-  const grupo = allData.find(v => v.sinAsignar);
-  if (grupo) {
-    grupo.vehicle    = conductorNom.toUpperCase();
-    grupo.placa      = placa.toUpperCase();
-    grupo.tipo       = tipo.toUpperCase();
-    grupo.sinAsignar = false;
-    grupo.orders.forEach(o => {
-      o.conductor = conductorNom.toUpperCase();
-      o.placa     = placa.toUpperCase();
-      o.tipo      = tipo.toUpperCase();
-    });
-    vehicleStatus[conductorNom.toUpperCase()] = vehicleStatus['SIN ASIGNAR'] || 'pendiente';
+  const vi = window._asignarVi;
+  const grupo = allData[vi];
+  if (!grupo) return;
+
+  // Get selected order indices from checkboxes
+  const checked = [...document.querySelectorAll(`.order-chk[data-vi="${vi}"]:checked`)];
+  if (checked.length === 0) {
+    alert('Selecciona al menos un pedido para asignar.');
+    return;
+  }
+  const selectedOis = new Set(checked.map(c => parseInt(c.dataset.oi)));
+  const selectedOrders = grupo.orders.filter((_, i) => selectedOis.has(i));
+  const remainingOrders = grupo.orders.filter((_, i) => !selectedOis.has(i));
+
+  const vNom = conductorNom.toUpperCase();
+  selectedOrders.forEach(o => {
+    o.conductor = vNom;
+    o.placa     = placa.toUpperCase();
+    o.tipo      = tipo.toUpperCase();
+  });
+
+  // Create new vehicle group for selected orders
+  const newGroup = {
+    vehicle:    vNom,
+    placa:      placa.toUpperCase(),
+    tipo:       tipo.toUpperCase(),
+    orders:     selectedOrders,
+    totalKg:    selectedOrders.reduce((a, o) => a + o.kilos, 0),
+    sinAsignar: false
+  };
+  vehicleStatus[vNom] = 'pendiente';
+
+  // Update SIN ASIGNAR group with remaining orders
+  if (remainingOrders.length > 0) {
+    grupo.orders   = remainingOrders;
+    grupo.totalKg  = remainingOrders.reduce((a, o) => a + o.kilos, 0);
+    allData.splice(vi, 0); // keep in place
+    allData = [...allData.filter(v => v !== grupo), newGroup, grupo];
+  } else {
+    // All orders assigned — remove SIN ASIGNAR group
     delete vehicleStatus['SIN ASIGNAR'];
+    allData = [...allData.filter(v => v !== grupo), newGroup];
   }
 
   cerrarModalAsignar();
   renderVehicles(allData);
-  showToast('✅', 'Vehículo asignado', conductorNom + ' · ' + placa);
+  updateStats(allData);
+  showToast('✅', 'Vehículo asignado', `${selectedOrders.length} pedidos → ${vNom} · ${placa}`);
 }
 
 document.getElementById('modal-asignar').addEventListener('click', function(e) {
