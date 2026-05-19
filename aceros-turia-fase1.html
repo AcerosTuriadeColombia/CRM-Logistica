@@ -1337,6 +1337,7 @@ function renderOrderRow(o, oi, vi, sinAsignar) {
   const chkCell = sinAsignar
     ? '<td onclick="event.stopPropagation()" style="width:2rem;text-align:center;vertical-align:middle">' +
       '<input type="checkbox" class="order-chk" data-vi="' + vi + '" data-oi="' + oi + '" ' +
+      'onchange="actualizarBtnAsignar(' + vi + ')" ' +
       'style="width:1rem;height:1rem;cursor:pointer;accent-color:var(--accent)"></td>'
     : '';
   return `
@@ -1385,6 +1386,7 @@ function renderVehicles(data) {
           <div class="vehicle-meta">${v.orders.length} pedido${v.orders.length!==1?'s':''} · ${cities || 'Sin ciudad'}</div>
         </div>
         <div class="vehicle-stats">
+          ${v.sinAsignar ? `<button class="btn-asignar-vehiculo" id="btn-asignar-${vi}" onclick="event.stopPropagation();abrirModalAsignar(${vi})" disabled style="opacity:0.4;cursor:not-allowed">🚛 Asignar vehículo</button>` : ''}
           <div class="vs-item">
             <div class="vs-val">${v.orders.length}</div>
             <div class="vs-label">Pedidos</div>
@@ -1430,9 +1432,8 @@ function renderVehicles(data) {
           ${v.sinAsignar ? `
           <div style="display:flex;gap:0.5rem;margin-left:auto;align-items:center">
             <label style="font-size:0.75rem;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;gap:0.3rem">
-              <input type="checkbox" id="chk-all-${vi}" onchange="toggleTodosOrders(${vi},this.checked)" style="accent-color:var(--accent)"> Todos
+              <input type="checkbox" id="chk-all-${vi}" onchange="toggleTodosOrders(${vi},this.checked)" style="accent-color:var(--accent)"> Seleccionar todos
             </label>
-            <button class="btn-asignar-vehiculo" onclick="abrirModalAsignar(${vi})">🚛 Asignar vehículo</button>
           </div>` : ''}
         </div>
       </div>
@@ -1961,6 +1962,16 @@ async function abrirModalAsignar(vi) {
 
 function toggleTodosOrders(vi, checked) {
   document.querySelectorAll(`.order-chk[data-vi="${vi}"]`).forEach(chk => chk.checked = checked);
+  actualizarBtnAsignar(vi);
+}
+
+function actualizarBtnAsignar(vi) {
+  const btn = document.getElementById('btn-asignar-' + vi);
+  if (!btn) return;
+  const haySeleccionados = document.querySelectorAll(`.order-chk[data-vi="${vi}"]:checked`).length > 0;
+  btn.disabled = !haySeleccionados;
+  btn.style.opacity = haySeleccionados ? '1' : '0.4';
+  btn.style.cursor  = haySeleccionados ? 'pointer' : 'not-allowed';
 }
 
 function cerrarModalAsignar() {
