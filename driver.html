@@ -261,26 +261,46 @@ html, body { height:100%; font-family:'Plus Jakarta Sans',sans-serif; background
   <div class="login-subtitle">App del Conductor</div>
 
   <div class="login-card">
-    <!-- PASO 1: SELECCIONAR VEHÍCULO -->
-    <div class="login-step active" id="step-vehiculo">
-      <div class="step-title">Selecciona tu vehículo</div>
+    <!-- PASO 1: SELECCIONAR CONDUCTOR -->
+    <div class="login-step active" id="step-conductor">
+      <div class="step-title">¿Quién eres?</div>
+      <div class="driver-grid" id="conductor-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-dim);font-size:0.8rem">Cargando...</div>
+      </div>
+      <div class="error-msg" id="err-conductor"></div>
+      <a href="https://acerosturiadecolombia.github.io/aceros-turia/aceros-turia-portal.html" class="link-back">← Volver al portal</a>
+      <div style="margin-top:0.75rem">
+        <button class="btn-primary" onclick="irAVehiculo()">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- PASO 2: SELECCIONAR VEHÍCULO -->
+    <div class="login-step" id="step-vehiculo">
+      <div class="vehicle-pill">
+        <span class="vehicle-pill-icon">👤</span>
+        <div>
+          <div class="vehicle-pill-name" id="pill-conductor-nombre">—</div>
+          <div class="vehicle-pill-sub">Conductor seleccionado</div>
+        </div>
+        <button class="vehicle-pill-change" onclick="volverAConductor()">← Cambiar</button>
+      </div>
+      <div class="step-title">¿Qué vehículo manejas hoy?</div>
       <div class="driver-grid" id="driver-grid">
         <div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-dim);font-size:0.8rem">Cargando vehículos...</div>
       </div>
       <div class="error-msg" id="err-vehiculo"></div>
-      <a href="https://acerosturiadecolombia.github.io/aceros-turia/aceros-turia-portal.html" class="link-back">← Volver al portal</a>
       <div style="margin-top:0.75rem">
         <button class="btn-primary" onclick="irAPin()">Continuar →</button>
       </div>
     </div>
 
-    <!-- PASO 2: PIN -->
+    <!-- PASO 3: PIN -->
     <div class="login-step" id="step-pin">
-      <div class="vehicle-pill" id="vehicle-pill">
+      <div class="vehicle-pill">
         <span class="vehicle-pill-icon">🚛</span>
         <div>
-          <div class="vehicle-pill-name" id="pill-nombre">—</div>
-          <div class="vehicle-pill-sub" id="pill-conductor">—</div>
+          <div class="vehicle-pill-name" id="pill-vehiculo-nombre">—</div>
+          <div class="vehicle-pill-sub" id="pill-vehiculo-placa">—</div>
         </div>
         <button class="vehicle-pill-change" onclick="volverAVehiculo()">← Cambiar</button>
       </div>
@@ -437,8 +457,10 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ============================================================
 // ESTADO
 // ============================================================
+let conductores      = [];
 let vehiculos        = [];
-let selectedVehiculo = null;   // { id, nombre, conductor, tipo }
+let selectedConductor = null;  // { id, nombre, pin }
+let selectedVehiculo = null;   // { id, nombre, placa, tipo }
 let stops            = [];
 let stopStatuses     = [];
 let stopIds          = [];
@@ -453,17 +475,42 @@ let photoFile        = null;
 // INIT — cargar vehículos
 // ============================================================
 async function init() {
+  // Cargar conductores
+  const grid = document.getElementById('conductor-grid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-dim);font-size:0.8rem">Cargando...</div>';
+
+  const { data, error } = await sb
+    .from('conductores')
+    .select('id, nombre, pin, telefono')
+    .eq('activo', true)
+    .order('nombre');
+
+  if (error || !data?.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-dim);font-size:0.8rem">Sin conductores. Contacta al supervisor.</div>';
+    return;
+  }
+
+  conductores = data;
+
+  grid.innerHTML = data.map(c => `
+    <div class="driver-option" onclick="selConductor('${c.id}', this)">
+      <span class="do-truck">👤</span>
+      <div class="do-name" style="font-size:0.7rem">${c.nombre}</div>
+    </div>`).join('');
+}
+
+async function cargarVehiculos() {
   const grid = document.getElementById('driver-grid');
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-dim);font-size:0.8rem">Cargando vehículos...</div>';
 
   const { data, error } = await sb
     .from('vehiculos')
-    .select('id, nombre, conductor, tipo, pin')
+    .select('id, nombre, tipo, placa')
     .eq('activo', true)
     .order('nombre');
 
   if (error || !data?.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-dim);font-size:0.8rem">Sin vehículos disponibles. Contacta al supervisor.</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-dim);font-size:0.8rem">Sin vehículos disponibles.</div>';
     return;
   }
 
@@ -471,30 +518,57 @@ async function init() {
   const iconos = { turbo:'🚛', grua:'🏗️', sencillo:'🚐' };
 
   grid.innerHTML = data.map(v => `
-    <div class="driver-option" onclick="selVehiculo('${v.id}')">
+    <div class="driver-option" onclick="selVehiculo('${v.id}', this)">
       <span class="do-truck">${iconos[v.tipo] || '🚛'}</span>
-      <div class="do-name">${v.nombre}</div>
-      <div class="do-conductor">${v.conductor}</div>
+      <div class="do-name" style="font-size:0.7rem">${v.placa}</div>
+      <div class="do-conductor">${v.nombre}</div>
     </div>`).join('');
 }
 
 // ============================================================
 // LOGIN STEP 1 — seleccionar vehículo
 // ============================================================
-function selVehiculo(id) {
-  document.querySelectorAll('.driver-option').forEach(d => d.classList.remove('selected'));
-  event.currentTarget.classList.add('selected');
+// PASO 1: Seleccionar conductor
+function selConductor(id, el) {
+  document.querySelectorAll('#conductor-grid .driver-option').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedConductor = conductores.find(c => c.id === id);
+}
+
+function irAVehiculo() {
+  if (!selectedConductor) {
+    document.getElementById('err-conductor').textContent = 'Selecciona tu nombre primero.';
+    return;
+  }
+  document.getElementById('err-conductor').textContent = '';
+  document.getElementById('pill-conductor-nombre').textContent = selectedConductor.nombre;
+  document.getElementById('step-conductor').classList.remove('active');
+  document.getElementById('step-vehiculo').classList.add('active');
+  selectedVehiculo = null;
+  cargarVehiculos();
+}
+
+function volverAConductor() {
+  document.getElementById('step-vehiculo').classList.remove('active');
+  document.getElementById('step-conductor').classList.add('active');
+  document.getElementById('err-vehiculo').textContent = '';
+}
+
+// PASO 2: Seleccionar vehículo
+function selVehiculo(id, el) {
+  document.querySelectorAll('#driver-grid .driver-option').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
   selectedVehiculo = vehiculos.find(v => v.id === id);
 }
 
 function irAPin() {
   if (!selectedVehiculo) {
-    document.getElementById('err-vehiculo').textContent = 'Selecciona tu vehículo primero.';
+    document.getElementById('err-vehiculo').textContent = 'Selecciona el vehículo primero.';
     return;
   }
   document.getElementById('err-vehiculo').textContent = '';
-  document.getElementById('pill-nombre').textContent = selectedVehiculo.nombre;
-  document.getElementById('pill-conductor').textContent = selectedVehiculo.conductor;
+  document.getElementById('pill-vehiculo-nombre').textContent = selectedVehiculo.nombre;
+  document.getElementById('pill-vehiculo-placa').textContent = selectedVehiculo.placa;
   document.getElementById('step-vehiculo').classList.remove('active');
   document.getElementById('step-pin').classList.add('active');
   document.getElementById('pin-input').value = '';
@@ -522,9 +596,9 @@ async function verificarPin() {
   btn.textContent = 'Verificando...';
 
   const { data, error } = await sb
-    .from('vehiculos')
-    .select('id, nombre, conductor')
-    .eq('id', selectedVehiculo.id)
+    .from('conductores')
+    .select('id, nombre')
+    .eq('id', selectedConductor.id)
     .eq('pin', pin)
     .single();
 
@@ -587,7 +661,7 @@ async function iniciarRuta() {
     stopIds      = stops.map(p => p.id);
   }
 
-  document.getElementById('header-driver').textContent = `${selectedVehiculo.conductor} · ${selectedVehiculo.nombre}`;
+  document.getElementById('header-driver').textContent = `${selectedConductor.nombre} · ${selectedVehiculo.placa} · ${selectedVehiculo.nombre}`;
   startTime = new Date();
   clockInterval = setInterval(updateClock, 30000);
   updateClock();
@@ -957,10 +1031,12 @@ function salir() {
   if (gpsInterval)   clearInterval(gpsInterval);
   if (gpsWatchId)    navigator.geolocation.clearWatch(gpsWatchId);
   ocultarStatusBar();
+  selectedConductor = null;
   selectedVehiculo = null;
   stops = []; stopStatuses = []; stopIds = [];
   document.getElementById('step-pin').classList.remove('active');
-  document.getElementById('step-vehiculo').classList.add('active');
+  document.getElementById('step-vehiculo').classList.remove('active');
+  document.getElementById('step-conductor').classList.add('active');
   document.getElementById('pin-input').value = '';
   switchScreen('screen-login');
   init();
