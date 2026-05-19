@@ -996,9 +996,9 @@ function readExcel(file) {
     try {
       setLoading(60);
       const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, { type: 'array' });
+      const wb = XLSX.read(data, { type: 'array', cellFormula: false, cellNF: false, cellText: false });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true, blankrows: false });
       setLoading(80);
       const parsed = parseAcerosTuriaFormat(rows);
       setLoading(100);
