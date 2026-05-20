@@ -97,110 +97,8 @@
 <style>
 @keyframes monPulse { 0%{transform:scale(0.8);opacity:0.6} 100%{transform:scale(2);opacity:0} }
 .mon-filter.active { background:rgba(249,115,22,0.12)!important;border-color:rgba(249,115,22,0.3)!important;color:var(--accent)!important; }
-
-/* ============================================================
-   MODAL ASIGNACIÓN DE VEHÍCULO
-   ============================================================ */
-#modal-asignar {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
-  z-index: 9999;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-#modal-asignar.open { display: flex; }
-.modal-asignar-box {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  width: 100%;
-  max-width: 560px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-.modal-asignar-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.4rem;
-  color: var(--accent);
-  letter-spacing: 1px;
-}
-.modal-field label {
-  display: block;
-  font-size: 0.72rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.35rem;
-}
-.modal-field select,
-.modal-field input {
-  width: 100%;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  padding: 0.55rem 0.75rem;
-  font-size: 0.9rem;
-  font-family: 'Sora', sans-serif;
-  outline: none;
-  box-sizing: border-box;
-}
-.modal-field select:focus,
-.modal-field input:focus { border-color: var(--accent); }
-.modal-field select option { background: #1a1a1a; }
-.modal-asignar-actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-}
-.btn-modal-cancel {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  border-radius: 6px;
-  padding: 0.55rem 1.25rem;
-  font-family: 'Sora', sans-serif;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-.btn-modal-cancel:hover { border-color: var(--text-dim); color: var(--text); }
-.btn-modal-confirm {
-  background: var(--accent);
-  border: none;
-  color: #000;
-  border-radius: 6px;
-  padding: 0.55rem 1.25rem;
-  font-family: 'Sora', sans-serif;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-.btn-modal-confirm:hover { opacity: 0.85; }
-.modal-loading-text { color: var(--text-dim); font-size: 0.82rem; text-align:center; }
-.btn-asignar-vehiculo {
-  background: var(--accent);
-  border: none;
-  color: #000;
-  border-radius: 6px;
-  padding: 0.3rem 0.9rem;
-  font-family: 'Sora', sans-serif;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.78rem;
-  white-space: nowrap;
-}
-.btn-asignar-vehiculo:hover { opacity: 0.85; }
-
 </style>
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root {
   --bg: #0f1117;
@@ -549,7 +447,7 @@ header {
   transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1);
 }
 
-.vehicle-card.open .orders-wrap { max-height: none; }
+.vehicle-card.open .orders-wrap { max-height: 1000px; }
 
 .orders-table {
   width: 100%;
@@ -813,9 +711,7 @@ header {
         Seleccionar archivo
       </button>
       <div class="columns-guide">
-        <span class="col-tag">CONDUCTOR</span>
-              <span class="col-tag">PLACA</span>
-              <span class="col-tag">TIPO DE VEHICULO</span>
+        <span class="col-tag">VEHICULO</span>
         <span class="col-tag">CLIENTE</span>
         <span class="col-tag">VENDEDOR</span>
         <span class="col-tag"># PEDIDO</span>
@@ -932,9 +828,11 @@ header {
     <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('en-destino',this)" style="color:#60a5fa">📍 En destino</button>
     <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('entregado',this)" style="color:var(--green)">✅ Entregados</button>
     <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('novedad',this)" style="color:var(--red)">⚠️ Novedad</button>
-    <button onclick="limpiarMonitor()" style="margin-left:auto;padding:0.4rem 0.9rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:var(--red);font-size:0.78rem;font-family:inherit;font-weight:600;cursor:pointer;white-space:nowrap" title="Borrar todos los pedidos de Supabase">🗑️ Nuevo día</button>
-    <input type="text" id="mon-search" placeholder="🔍 Buscar..." oninput="renderMonitor()" style="padding:0.4rem 0.9rem;background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:0.78rem;font-family:inherit;outline:none;width:200px">
-    <span style="font-size:0.72rem;color:var(--text-dim)" id="mon-update">—</span>
+    <div style="margin-left:auto;display:flex;gap:0.5rem;align-items:center;flex-shrink:0">
+      <button onclick="limpiarMonitor()" style="padding:0.4rem 0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.35);border-radius:8px;color:#f87171;font-size:0.78rem;font-family:inherit;font-weight:700;cursor:pointer;white-space:nowrap">🗑️ Nuevo día</button>
+      <input type="text" id="mon-search" placeholder="🔍 Buscar..." oninput="renderMonitor()" style="padding:0.4rem 0.9rem;background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:0.78rem;font-family:inherit;outline:none;width:180px">
+      <span style="font-size:0.72rem;color:var(--text-dim);white-space:nowrap" id="mon-update">—</span>
+    </div>
   </div>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;min-width:900px">
@@ -1099,9 +997,9 @@ function readExcel(file) {
     try {
       setLoading(60);
       const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, { type: 'array', cellFormula: false, cellNF: false, cellText: false });
+      const wb = XLSX.read(data, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true, blankrows: false });
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
       setLoading(80);
       const parsed = parseAcerosTuriaFormat(rows);
       setLoading(100);
@@ -1120,109 +1018,96 @@ function readExcel(file) {
 }
 
 // Parser específico para el formato de Aceros Turia
-// Columnas: CONDUCTOR | PLACA | TIPO DE VEHICULO | CLIENTE | VENDEDOR | # PEDIDO | DESCRIPCION ARTICULO | CANTIDAD | KILOS | OBRA | DIRECCION | CIUDAD
+// Columnas: VEHICULO | CLIENTE | VENDEDOR | # PEDIDO | DESCRIPCION ARTICULO | CANTIDAD | KILOS | OBRA | DIRECCION | CIUDAD
 function parseAcerosTuriaFormat(rows) {
-  const pedidos = [];
+  const vehicles = {};
+  let currentVehicle = null;
   let headerRow = -1;
-  let currentConductor = null;
-  let currentPlaca = null;
-  let currentTipo = null;
 
   // Encontrar fila de encabezado
   for (let i = 0; i < rows.length; i++) {
-    const rowStr = rows[i].join('|').toUpperCase();
-    if (rowStr.includes('CLIENTE') && rowStr.includes('PEDIDO')) {
+    const row = rows[i];
+    const rowStr = row.join('|').toUpperCase();
+    if (rowStr.includes('VEHICULO') || rowStr.includes('VEHÍCULO') || rowStr.includes('CLIENTE')) {
       headerRow = i;
       break;
     }
   }
 
-  if (headerRow < 0) return [];
-
-  // Detectar columnas por nombre
+  // Índices de columnas (detecta por nombre)
   let colMap = {};
-  rows[headerRow].forEach((cell, idx) => {
-    const c = String(cell).toUpperCase().trim();
-    if (c.includes('CONDUCTOR')) colMap.conductor = idx;
-    else if (c === 'PLACA') colMap.placa = idx;
-    else if (c.includes('TIPO')) colMap.tipo = idx;
-    else if (c === 'CLIENTE') colMap.cliente = idx;
-    else if (c === 'VENDEDOR') colMap.vendedor = idx;
-    else if (c.includes('PEDIDO')) colMap.pedido = idx;
-    else if (c.includes('DESCRIPCION') || c.includes('ARTICULO') || c.includes('ARTÍCULO')) colMap.descripcion = idx;
-    else if (c === 'CANTIDAD') colMap.cantidad = idx;
-    else if (c === 'KILOS') colMap.kilos = idx;
-    else if (c === 'OBRA') colMap.obra = idx;
-    else if (c.includes('DIRECCI')) colMap.direccion = idx;
-    else if (c === 'CIUDAD') colMap.ciudad = idx;
-  });
+  if (headerRow >= 0) {
+    rows[headerRow].forEach((cell, idx) => {
+      const c = String(cell).toUpperCase().trim();
+      if (c.includes('VEHICULO') || c.includes('VEHÍCULO')) colMap.vehiculo = idx;
+      else if (c === 'CLIENTE') colMap.cliente = idx;
+      else if (c === 'VENDEDOR') colMap.vendedor = idx;
+      else if (c.includes('PEDIDO')) colMap.pedido = idx;
+      else if (c.includes('DESCRIPCION') || c.includes('ARTÍCULO') || c.includes('ARTICULO')) colMap.descripcion = idx;
+      else if (c === 'CANTIDAD') colMap.cantidad = idx;
+      else if (c === 'KILOS') colMap.kilos = idx;
+      else if (c === 'OBRA') colMap.obra = idx;
+      else if (c.includes('DIRECCI')) colMap.direccion = idx;
+      else if (c === 'CIUDAD') colMap.ciudad = idx;
+    });
+  }
 
-  const get = (row, key) => String(row[colMap[key]] ?? '').trim();
+  // Si no detectó encabezados, usar posiciones por defecto
+  if (Object.keys(colMap).length < 5) {
+    colMap = { vehiculo:0, cliente:1, vendedor:2, pedido:3, descripcion:4, cantidad:5, kilos:6, obra:7, direccion:8, ciudad:9 };
+  }
+
+  const get = (row, key) => String(row[colMap[key]] || '').trim();
 
   for (let i = headerRow + 1; i < rows.length; i++) {
     const row = rows[i];
-    if (!row || row.every(c => c === '' || c === null || c === undefined)) continue;
+    if (!row || row.every(c => c === '' || c === null)) continue;
 
-    const rowStr = row.join('').toUpperCase();
-    if (rowStr.includes('TOTAL KG') || rowStr.includes('TOTAL KILOS')) continue;
-
-    // Detectar cambio de conductor (celda con nombre en columna conductor)
-    const conductorCell = get(row, 'conductor');
-    if (conductorCell && conductorCell.length > 1 && !conductorCell.match(/^\d+$/)) {
-      currentConductor = conductorCell.toUpperCase();
-      currentPlaca     = get(row, 'placa').toUpperCase() || null;
-      currentTipo      = get(row, 'tipo').toUpperCase() || null;
-    }
-
+    const vehicleCell = get(row, 'vehiculo');
     const clienteCell = get(row, 'cliente');
     const pedidoCell  = get(row, 'pedido');
 
-    // Fila de subtotal — saltar
-    if (!clienteCell && !pedidoCell) continue;
+    // ¿Es fila de subtotal? (tiene número en kilos pero no tiene cliente/pedido)
+    const isSubtotal = !clienteCell && !pedidoCell && row.some(c => typeof c === 'number' && c > 100);
+    if (isSubtotal) continue;
 
-    if (clienteCell && clienteCell.length > 1) {
-      const kilosRaw  = row[colMap.kilos];
-      const kilos     = typeof kilosRaw === 'number' ? kilosRaw : parseFloat(String(kilosRaw).replace(',','.')) || 0;
-      const cantRaw   = row[colMap.cantidad];
-      const cantidad  = typeof cantRaw === 'number' ? cantRaw : parseFloat(String(cantRaw).replace(',','.')) || 0;
+    // ¿Es fila de total general?
+    const rowStr = row.join('').toUpperCase();
+    if (rowStr.includes('TOTAL KG') || rowStr.includes('TOTAL KILOS')) continue;
 
-      pedidos.push({
-        conductor:   currentConductor || null,
-        placa:       currentPlaca     || null,
-        tipo:        currentTipo      || null,
+    // ¿Cambia el vehículo?
+    if (vehicleCell && vehicleCell.length > 1 && !vehicleCell.match(/^\d+$/)) {
+      currentVehicle = vehicleCell.toUpperCase();
+    }
+
+    // ¿Es fila de pedido válida?
+    if (clienteCell && clienteCell.length > 1 && currentVehicle) {
+      if (!vehicles[currentVehicle]) {
+        vehicles[currentVehicle] = { vehicle: currentVehicle, orders: [], totalKg: 0 };
+      }
+
+      const kilosRaw = row[colMap.kilos];
+      const kilos = typeof kilosRaw === 'number' ? kilosRaw : parseFloat(String(kilosRaw).replace(',','.')) || 0;
+      const cantRaw = row[colMap.cantidad];
+      const cantidad = typeof cantRaw === 'number' ? cantRaw : parseFloat(String(cantRaw).replace(',','.')) || 0;
+
+      vehicles[currentVehicle].orders.push({
         cliente:     clienteCell,
         vendedor:    get(row, 'vendedor'),
         pedido:      get(row, 'pedido'),
         descripcion: get(row, 'descripcion'),
-        cantidad,
-        kilos,
+        cantidad:    cantidad,
+        kilos:       kilos,
         obra:        get(row, 'obra'),
         direccion:   get(row, 'direccion'),
         ciudad:      get(row, 'ciudad'),
         status:      'pendiente'
       });
+      vehicles[currentVehicle].totalKg += kilos;
     }
   }
 
-  // Agrupar por conductor para mostrar en UI
-  // Si conductor es null (columnas vacías en Excel), todos van al grupo SIN ASIGNAR
-  // El supervisor logístico los asignará desde la UI
-  const grouped = {};
-  pedidos.forEach(p => {
-    const key = p.conductor || '__SIN_ASIGNAR__';
-    if (!grouped[key]) grouped[key] = {
-      vehicle:    p.conductor || 'SIN ASIGNAR',
-      placa:      p.placa || null,
-      tipo:       p.tipo  || null,
-      orders:     [],
-      totalKg:    0,
-      sinAsignar: !p.conductor
-    };
-    grouped[key].orders.push(p);
-    grouped[key].totalKg += p.kilos;
-  });
-
-  return Object.values(grouped);
+  return Object.values(vehicles);
 }
 
 // ============================================================
@@ -1333,36 +1218,6 @@ function animateNumber(id, target) {
   }, 30);
 }
 
-
-function renderOrderRow(o, oi, vi, sinAsignar) {
-  const chkCell = sinAsignar
-    ? '<td onclick="event.stopPropagation()" style="width:2rem;text-align:center;vertical-align:middle">' +
-      '<input type="checkbox" class="order-chk" data-vi="' + vi + '" data-oi="' + oi + '" ' +
-      'onchange="actualizarBtnAsignar(' + vi + ')" ' +
-      'style="width:1rem;height:1rem;cursor:pointer;accent-color:var(--accent)"></td>'
-    : '';
-  return `
-    <tr>
-      ${chkCell}
-      <td><span class="order-num">${o.pedido || '—'}</span></td>
-      <td>
-        <div class="client-name">${o.cliente}</div>
-        <div class="client-vendor">${o.vendedor}</div>
-      </td>
-      <td>
-        <div class="product-name">${o.descripcion}</div>
-        <div class="product-detail">Cant: ${o.cantidad}</div>
-      </td>
-      <td class="kg-val" style="color:var(--text-dim)">${o.cantidad.toLocaleString('es-CO')}</td>
-      <td class="kg-val" style="color:var(--accent)">${o.kilos.toLocaleString('es-CO')}</td>
-      <td><span class="city-badge">${o.ciudad || '—'}</span></td>
-      <td>
-        <div style="font-size:0.75rem">${o.obra || '—'}</div>
-        <div style="font-size:0.68rem;color:var(--text-dim)">${o.direccion || ''}</div>
-      </td>
-    </tr>`;
-}
-
 function renderVehicles(data) {
   const grid = document.getElementById('vehicles-grid');
 
@@ -1379,15 +1234,12 @@ function renderVehicles(data) {
     return `
     <div class="vehicle-card" id="vc-${vi}">
       <div class="vehicle-header" onclick="toggleVehicle(${vi})">
-        <div class="vehicle-icon">${v.vehicle === 'SIN ASIGNAR' ? '❓' : getVehicleIcon(v.tipo || v.vehicle)}</div>
+        <div class="vehicle-icon">${getVehicleIcon(v.vehicle)}</div>
         <div style="flex:1">
-          <div class="vehicle-name" style="${v.vehicle === 'SIN ASIGNAR' ? 'color:var(--yellow)' : ''}">${v.vehicle}${v.placa ? ` · ${v.placa}` : ''}
-
-          </div>
+          <div class="vehicle-name">${v.vehicle}</div>
           <div class="vehicle-meta">${v.orders.length} pedido${v.orders.length!==1?'s':''} · ${cities || 'Sin ciudad'}</div>
         </div>
         <div class="vehicle-stats">
-          ${v.sinAsignar ? `<button class="btn-asignar-vehiculo" id="btn-asignar-${vi}" onclick="event.stopPropagation();abrirModalAsignar(${vi})" disabled style="opacity:0.4;cursor:not-allowed">🚛 Asignar vehículo</button>` : ''}
           <div class="vs-item">
             <div class="vs-val">${v.orders.length}</div>
             <div class="vs-label">Pedidos</div>
@@ -1412,7 +1264,6 @@ function renderVehicles(data) {
         <table class="orders-table">
           <thead>
             <tr>
-              ${v.sinAsignar ? '<th style=\"width:2rem\"></th>' : ''}
               <th># Pedido</th>
               <th>Cliente / Vendedor</th>
               <th>Artículo</th>
@@ -1423,19 +1274,31 @@ function renderVehicles(data) {
             </tr>
           </thead>
           <tbody>
-            ${v.orders.map((o, oi) => renderOrderRow(o, oi, vi, v.sinAsignar)).join('')}
-
+            ${v.orders.map(o => `
+              <tr>
+                <td><span class="order-num">${o.pedido || '—'}</span></td>
+                <td>
+                  <div class="client-name">${o.cliente}</div>
+                  <div class="client-vendor">${o.vendedor}</div>
+                </td>
+                <td>
+                  <div class="product-name">${o.descripcion}</div>
+                  <div class="product-detail">Cant: ${o.cantidad}</div>
+                </td>
+                <td class="kg-val" style="color:var(--text-dim)">${o.cantidad.toLocaleString('es-CO')}</td>
+                <td class="kg-val" style="color:var(--accent)">${o.kilos.toLocaleString('es-CO')}</td>
+                <td><span class="city-badge">${o.ciudad || '—'}</span></td>
+                <td>
+                  <div style="font-size:0.75rem">${o.obra || '—'}</div>
+                  <div style="font-size:0.68rem;color:var(--text-dim)">${o.direccion || ''}</div>
+                </td>
+              </tr>
+            `).join('')}
           </tbody>
         </table>
-        <div class="vehicle-footer" style="flex-wrap:wrap;gap:0.5rem">
+        <div class="vehicle-footer">
           <span class="total-label">Total carga:</span>
           <span class="total-value">${v.totalKg.toLocaleString('es-CO')} kg</span>
-          ${v.sinAsignar ? `
-          <div style="display:flex;gap:0.5rem;margin-left:auto;align-items:center">
-            <label style="font-size:0.75rem;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;gap:0.3rem">
-              <input type="checkbox" id="chk-all-${vi}" onchange="toggleTodosOrders(${vi},this.checked)" style="accent-color:var(--accent)"> Seleccionar todos
-            </label>
-          </div>` : ''}
         </div>
       </div>
     </div>`;
@@ -1519,28 +1382,22 @@ async function publishRoutes() {
   let pedidosCreados = 0;
   let errores = 0;
 
-  // Cargar todos los vehículos de la planta para lookup por placa
-  const { data: vehiculosDB } = await sb
-    .from('vehiculos')
-    .select('id, nombre, placa')
-    .eq('planta', plantaSeleccionada)
-    .eq('activo', true);
+  for (const vehiculo of allData) {
+    const { data: vehiculoData } = await sb
+      .from('vehiculos')
+      .select('id')
+      .ilike('nombre', vehiculo.vehicle.trim())
+      .eq('planta', plantaSeleccionada)
+      .single();
 
-  const vehiculosPorPlaca = {};
-  (vehiculosDB || []).forEach(v => {
-    if (v.placa) vehiculosPorPlaca[v.placa.toUpperCase()] = v;
-  });
-
-  for (const grupo_conductor of allData) {
-    // Buscar vehículo por placa si tiene, si no dejarlo null
-    let vehiculoId = null;
-    if (grupo_conductor.placa) {
-      const vMatch = vehiculosPorPlaca[grupo_conductor.placa.toUpperCase()];
-      if (vMatch) vehiculoId = vMatch.id;
+    if (!vehiculoData) {
+      console.warn(`Vehículo no encontrado en planta ${plantaSeleccionada}: ${vehiculo.vehicle}`);
+      errores++;
+      continue;
     }
 
     const grupos = {};
-    for (const order of grupo_conductor.orders) {
+    for (const order of vehiculo.orders) {
       const key = `${order.pedido}|${order.cliente}`;
       if (!grupos[key]) {
         grupos[key] = {
@@ -1566,12 +1423,12 @@ async function publishRoutes() {
         .ilike('nombre', grupo.vendedor.trim())
         .single();
 
-      // Verificar si ya existe (por numero_pedido + fecha)
       const { data: existe } = await sb
         .from('pedidos')
         .select('id')
         .eq('numero_pedido', grupo.numero_pedido)
         .eq('fecha', hoy)
+        .eq('vehiculo_id', vehiculoData.id)
         .single();
 
       if (existe) continue;
@@ -1586,7 +1443,7 @@ async function publishRoutes() {
           direccion:       grupo.direccion,
           ciudad:          grupo.ciudad,
           vendedor_id:     vendedorData?.id || null,
-          vehiculo_id:     vehiculoId,
+          vehiculo_id:     vehiculoData.id,
           total_kilos:     totalKilos,
           total_cantidad:  totalCantidad,
           status:          'pendiente',
@@ -1614,7 +1471,7 @@ async function publishRoutes() {
 
   const plantaNombre = plantaSeleccionada === 'amaga' ? 'Amagá' : 'Malambo';
   if (pedidosCreados === 0 && errores > 0) {
-    showToast('⚠️', 'Error al publicar', `Verifica los datos e intenta de nuevo`);
+    showToast('⚠️', 'Error al publicar', `Verifica que los vehículos de ${plantaNombre} estén registrados`);
   } else if (pedidosCreados === 0) {
     showToast('ℹ️', 'Sin cambios', 'Estos pedidos ya fueron publicados hoy');
   } else {
@@ -1821,48 +1678,6 @@ function setMonFilter(f, el) {
   renderMonitor();
 }
 
-
-
-async function monEliminarPedido(id) {
-  if (!confirm('¿Eliminar este pedido de Supabase? Esta acción no se puede deshacer.')) return;
-  try {
-    const { error: e1 } = await sb.from('historial_estados').delete().eq('pedido_id', id);
-    if (e1) throw e1;
-    const { error: e2 } = await sb.from('items_pedido').delete().eq('pedido_id', id);
-    if (e2) throw e2;
-    const { error: e3 } = await sb.from('pedidos').delete().eq('id', id);
-    if (e3) throw e3;
-    monPedidos = monPedidos.filter(p => p.id !== id);
-    renderMonitorStats();
-    renderMonitor();
-    showToast('✅', 'Pedido eliminado', 'Borrado de Supabase correctamente');
-  } catch(err) {
-    showToast('❌', 'Error', err.message || 'No se pudo eliminar');
-    console.error(err);
-  }
-}
-
-async function limpiarMonitor() {
-  if (!confirm('¿Borrar TODOS los pedidos de Supabase para empezar un nuevo día? Esta acción no se puede deshacer.')) return;
-  showToast('⏳', 'Borrando...', 'Eliminando registros de Supabase');
-  try {
-    const { error: e1 } = await sb.from('historial_estados').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    if (e1) throw e1;
-    const { error: e2 } = await sb.from('items_pedido').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    if (e2) throw e2;
-    const { error: e3 } = await sb.from('pedidos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    if (e3) throw e3;
-    monPedidos = [];
-    renderMonitorStats();
-    renderMonitor();
-    document.getElementById('mon-update').textContent = 'Monitor limpiado · ' + new Date().toLocaleTimeString('es-CO');
-    showToast('✅', 'Nuevo día listo', 'Todos los pedidos fueron eliminados de Supabase');
-  } catch(err) {
-    showToast('❌', 'Error', err.message || 'No se pudo limpiar');
-    console.error(err);
-  }
-}
-
 function renderMonitor() {
   const q = (document.getElementById('mon-search')?.value || '').toLowerCase();
   let pedidos = monFiltro === 'todos' ? monPedidos : monPedidos.filter(p => p.status === monFiltro);
@@ -1903,7 +1718,7 @@ function renderMonitor() {
       <td style="padding:0.85rem"><div style="display:flex;gap:0.35rem">
         <button title="Ubicación" onclick="monVerUbicacion('${p.id}')" style="width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:0.82rem;opacity:${tieneGps?1:0.4}">📍</button>
         <button title="Remisión" onclick="monVerRemision('${p.foto_remision_url||''}')" style="width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:0.82rem;opacity:${tieneRem?1:0.4}">📄</button>
-        <button title="Eliminar de la vista" onclick="monEliminarPedido('${p.id}')" style="width:28px;height:28px;border-radius:7px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);cursor:pointer;font-size:0.82rem;color:var(--red)">✕</button>
+        <button title="Eliminar pedido" onclick="monEliminarPedido('${p.id}')" style="width:28px;height:28px;border-radius:7px;border:1px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.08);cursor:pointer;font-size:0.82rem;color:#f87171">✕</button>
       </div></td>
     </tr>`;
   }).join('');
@@ -1942,189 +1757,43 @@ document.getElementById('mon-modal-remision').addEventListener('click', e => {
     document.getElementById('mon-modal-remision').style.display = 'none';
 });
 
-
 // ============================================================
-// MODAL ASIGNACIÓN DE VEHÍCULO
+// MONITOR — Borrar pedidos de Supabase
 // ============================================================
-let _conductoresCache = null;
-let _vehiculosCache   = null;
-
-async function abrirModalAsignar(vi) {
-  window._asignarVi = vi;
-  document.getElementById('modal-asignar').classList.add('open');
-  document.getElementById('modal-asignar-loading').style.display = 'block';
-  document.getElementById('modal-asignar-form').style.display    = 'none';
-  document.getElementById('btn-confirmar-asignar').style.display = 'none';
-
+async function monEliminarPedido(id) {
+  if (!confirm('¿Eliminar este pedido de Supabase? Esta acción no se puede deshacer.')) return;
   try {
-    if (!_conductoresCache || !_vehiculosCache) {
-      const [{ data: conductores, error: ec }, { data: vehiculos, error: ev }] = await Promise.all([
-        sb.from('conductores').select('id, nombre').order('nombre'),
-        sb.from('vehiculos').select('id, placa, tipo').order('placa')
-      ]);
-      if (ec) throw ec;
-      if (ev) throw ev;
-      _conductoresCache = conductores || [];
-      _vehiculosCache   = vehiculos   || [];
-    }
-
-    const selC = document.getElementById('ma-conductor');
-    selC.innerHTML = '<option value="">— Seleccionar conductor —</option>';
-    _conductoresCache.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = c.nombre;
-      selC.appendChild(opt);
-    });
-
-    const selV = document.getElementById('ma-vehiculo');
-    selV.innerHTML = '<option value="">— Seleccionar vehículo —</option>';
-    _vehiculosCache.forEach(v => {
-      const opt = document.createElement('option');
-      opt.value = v.id;
-      opt.textContent = v.placa + (v.tipo ? ' · ' + v.tipo : '');
-      opt.dataset.tipo  = v.tipo  || '';
-      opt.dataset.placa = v.placa || '';
-      selV.appendChild(opt);
-    });
-
-    selV.onchange = function() {
-      const sel = this.options[this.selectedIndex];
-      document.getElementById('ma-tipo').value = sel.dataset.tipo || '';
-    };
-
-    document.getElementById('modal-asignar-loading').style.display = 'none';
-    document.getElementById('modal-asignar-form').style.display    = 'flex';
-    document.getElementById('btn-confirmar-asignar').style.display = 'inline-block';
-
+    await sb.from('historial_estados').delete().eq('pedido_id', id);
+    await sb.from('items_pedido').delete().eq('pedido_id', id);
+    await sb.from('pedidos').delete().eq('id', id);
+    monPedidos = monPedidos.filter(p => p.id !== id);
+    renderMonitorStats();
+    renderMonitor();
+    showToast('✅', 'Pedido eliminado', 'Borrado de Supabase correctamente');
   } catch(err) {
-    document.getElementById('modal-asignar-loading').textContent = '❌ Error cargando datos: ' + (err.message || err);
+    showToast('❌', 'Error', err.message || 'No se pudo eliminar');
     console.error(err);
   }
 }
 
-
-function toggleTodosOrders(vi, checked) {
-  document.querySelectorAll(`.order-chk[data-vi="${vi}"]`).forEach(chk => chk.checked = checked);
-  actualizarBtnAsignar(vi);
-}
-
-function actualizarBtnAsignar(vi) {
-  const btn = document.getElementById('btn-asignar-' + vi);
-  if (!btn) return;
-  const haySeleccionados = document.querySelectorAll(`.order-chk[data-vi="${vi}"]:checked`).length > 0;
-  btn.disabled = !haySeleccionados;
-  btn.style.opacity = haySeleccionados ? '1' : '0.4';
-  btn.style.cursor  = haySeleccionados ? 'pointer' : 'not-allowed';
-}
-
-function cerrarModalAsignar() {
-  document.getElementById('modal-asignar').classList.remove('open');
-}
-
-function confirmarAsignacion() {
-  const selC = document.getElementById('ma-conductor');
-  const selV = document.getElementById('ma-vehiculo');
-
-  const conductorId  = selC.value;
-  const conductorNom = selC.options[selC.selectedIndex]?.textContent || '';
-  const vehiculoOpt  = selV.options[selV.selectedIndex];
-  const placa        = vehiculoOpt?.dataset.placa || '';
-  const tipo         = vehiculoOpt?.dataset.tipo  || '';
-
-  if (!conductorId || !selV.value) {
-    alert('Selecciona conductor y vehículo para continuar.');
-    return;
+async function limpiarMonitor() {
+  if (!confirm('¿Borrar TODOS los pedidos de Supabase para empezar un nuevo día? Esta acción no se puede deshacer.')) return;
+  showToast('⏳', 'Borrando...', 'Eliminando registros de Supabase');
+  try {
+    await sb.from('historial_estados').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await sb.from('items_pedido').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await sb.from('pedidos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    monPedidos = [];
+    renderMonitorStats();
+    renderMonitor();
+    document.getElementById('mon-update').textContent = 'Limpiado · ' + new Date().toLocaleTimeString('es-CO');
+    showToast('✅', 'Nuevo día listo', 'Todos los pedidos eliminados de Supabase');
+  } catch(err) {
+    showToast('❌', 'Error', err.message || 'No se pudo limpiar');
+    console.error(err);
   }
-
-  const vi = window._asignarVi;
-  const grupo = allData[vi];
-  if (!grupo) return;
-
-  // Get selected order indices from checkboxes
-  const checked = [...document.querySelectorAll(`.order-chk[data-vi="${vi}"]:checked`)];
-  if (checked.length === 0) {
-    alert('Selecciona al menos un pedido para asignar.');
-    return;
-  }
-  const selectedOis = new Set(checked.map(c => parseInt(c.dataset.oi)));
-  const selectedOrders = grupo.orders.filter((_, i) => selectedOis.has(i));
-  const remainingOrders = grupo.orders.filter((_, i) => !selectedOis.has(i));
-
-  const vNom = conductorNom.toUpperCase();
-  selectedOrders.forEach(o => {
-    o.conductor = vNom;
-    o.placa     = placa.toUpperCase();
-    o.tipo      = tipo.toUpperCase();
-  });
-
-  // Create new vehicle group for selected orders
-  const newGroup = {
-    vehicle:    vNom,
-    placa:      placa.toUpperCase(),
-    tipo:       tipo.toUpperCase(),
-    orders:     selectedOrders,
-    totalKg:    selectedOrders.reduce((a, o) => a + o.kilos, 0),
-    sinAsignar: false
-  };
-  vehicleStatus[vNom] = 'pendiente';
-
-  // Update SIN ASIGNAR group with remaining orders
-  if (remainingOrders.length > 0) {
-    grupo.orders   = remainingOrders;
-    grupo.totalKg  = remainingOrders.reduce((a, o) => a + o.kilos, 0);
-    allData.splice(vi, 0); // keep in place
-    allData = [...allData.filter(v => v !== grupo), newGroup, grupo];
-  } else {
-    // All orders assigned — remove SIN ASIGNAR group
-    delete vehicleStatus['SIN ASIGNAR'];
-    allData = [...allData.filter(v => v !== grupo), newGroup];
-  }
-
-  cerrarModalAsignar();
-  renderVehicles(allData);
-  updateStats(allData);
-  showToast('✅', 'Vehículo asignado', `${selectedOrders.length} pedidos → ${vNom} · ${placa}`);
 }
-
-document.getElementById('modal-asignar').addEventListener('click', function(e) {
-  if (e.target === this) cerrarModalAsignar();
-});
 
 </script>
-
-<!-- MODAL ASIGNACIÓN DE VEHÍCULO -->
-<div id="modal-asignar">
-  <div class="modal-asignar-box">
-    <div class="modal-asignar-title">🚛 Asignar Vehículo</div>
-
-    <div id="modal-asignar-loading" class="modal-loading-text">Cargando conductores y vehículos...</div>
-
-    <div id="modal-asignar-form" style="display:none;flex-direction:column;gap:1rem;">
-      <div class="modal-field">
-        <label>Conductor</label>
-        <select id="ma-conductor">
-          <option value="">— Seleccionar conductor —</option>
-        </select>
-      </div>
-      <div class="modal-field">
-        <label>Vehículo (Placa)</label>
-        <select id="ma-vehiculo">
-          <option value="">— Seleccionar vehículo —</option>
-        </select>
-      </div>
-      <div class="modal-field" id="ma-tipo-wrap">
-        <label>Tipo de vehículo</label>
-        <input type="text" id="ma-tipo" placeholder="Se completa al seleccionar vehículo" readonly style="color:var(--text-dim)">
-      </div>
-    </div>
-
-    <div class="modal-asignar-actions">
-      <button class="btn-modal-cancel" onclick="cerrarModalAsignar()">Cancelar</button>
-      <button class="btn-modal-confirm" id="btn-confirmar-asignar" onclick="confirmarAsignacion()" style="display:none">Confirmar asignación</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
