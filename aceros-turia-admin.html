@@ -1605,18 +1605,22 @@ async function cargarResetStats() {
   }
 }
 
-async function ejecutarReset() {
-  const confirmMsg = '⚠️ ADVERTENCIA\n\nEsto borrará PERMANENTEMENTE todos los pedidos, ítems y estados de Supabase.\n\nEscribe CONFIRMAR para continuar:';
-  const input = prompt(confirmMsg);
-  if (input !== 'CONFIRMAR') {
-    if (input !== null) alert('Operación cancelada. Debes escribir exactamente: CONFIRMAR');
-    return;
-  }
+function ejecutarReset() {
+  document.getElementById('reset-confirm-input').value = '';
+  document.getElementById('btn-reset-exec').disabled = true;
+  document.getElementById('btn-reset-exec').style.opacity = '0.4';
+  document.getElementById('modal-reset').style.display = 'flex';
+  setTimeout(() => document.getElementById('reset-confirm-input').focus(), 100);
+}
 
+function cerrarModalReset() {
+  document.getElementById('modal-reset').style.display = 'none';
+}
+
+async function ejecutarResetConfirmado() {
+  cerrarModalReset();
   showToast('⏳', 'Borrando...', 'Eliminando registros de Supabase');
-
   try {
-    // Delete in order: historial_estados → items_pedido → pedidos
     const { error: e1 } = await sb.from('historial_estados').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     if (e1) throw e1;
     const { error: e2 } = await sb.from('items_pedido').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -1624,7 +1628,6 @@ async function ejecutarReset() {
     const { error: e3 } = await sb.from('pedidos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     if (e3) throw e3;
 
-    // Reset counters
     document.getElementById('rst-pedidos').textContent   = '0';
     document.getElementById('rst-items').textContent     = '0';
     document.getElementById('rst-historial').textContent = '0';
@@ -1637,5 +1640,24 @@ async function ejecutarReset() {
 }
 
 </script>
+
+<!-- MODAL CONFIRM RESET -->
+<div id="modal-reset" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:#1a1a1a;border:1px solid rgba(239,68,68,0.4);border-radius:14px;padding:2rem;max-width:440px;width:100%">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--red);letter-spacing:1px;margin-bottom:0.5rem">⚠️ Confirmar Reset</div>
+    <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:1.25rem;line-height:1.6">
+      Esta acción borrará <strong style="color:white">permanentemente</strong> todos los pedidos, ítems y estados de Supabase.<br>
+      Escribe <strong style="color:var(--red)">CONFIRMAR</strong> para continuar.
+    </div>
+    <input id="reset-confirm-input" type="text" placeholder="Escribe CONFIRMAR aquí..."
+      style="width:100%;box-sizing:border-box;padding:0.6rem 0.9rem;background:#111;border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:white;font-size:0.9rem;font-family:inherit;outline:none;margin-bottom:1.25rem"
+      oninput="document.getElementById('btn-reset-exec').disabled = this.value !== 'CONFIRMAR'; document.getElementById('btn-reset-exec').style.opacity = this.value === 'CONFIRMAR' ? '1' : '0.4'">
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end">
+      <button onclick="cerrarModalReset()" style="padding:0.55rem 1.25rem;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text-mid);cursor:pointer;font-family:inherit;font-size:0.85rem">Cancelar</button>
+      <button id="btn-reset-exec" onclick="ejecutarResetConfirmado()" disabled style="opacity:0.4;padding:0.55rem 1.5rem;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);border-radius:8px;color:var(--red);cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:700">🗑️ Borrar todo</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
