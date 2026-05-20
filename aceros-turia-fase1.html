@@ -932,8 +932,8 @@ header {
     <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('en-destino',this)" style="color:#60a5fa">📍 En destino</button>
     <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('entregado',this)" style="color:var(--green)">✅ Entregados</button>
     <button class="btn btn-ghost btn-sm mon-filter" onclick="setMonFilter('novedad',this)" style="color:var(--red)">⚠️ Novedad</button>
-    <input type="text" id="mon-search" placeholder="🔍 Buscar..." oninput="renderMonitor()" style="margin-left:auto;padding:0.4rem 0.9rem;background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:0.78rem;font-family:inherit;outline:none;width:200px">
-    <button onclick="limpiarMonitor()" style="padding:0.4rem 0.9rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:var(--red);font-size:0.78rem;font-family:inherit;font-weight:600;cursor:pointer;white-space:nowrap" title="Limpiar vista para nuevo día">🗑️ Nuevo día</button>
+    <button onclick="limpiarMonitor()" style="margin-left:auto;padding:0.4rem 0.9rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:var(--red);font-size:0.78rem;font-family:inherit;font-weight:600;cursor:pointer;white-space:nowrap" title="Borrar todos los pedidos de Supabase">🗑️ Nuevo día</button>
+    <input type="text" id="mon-search" placeholder="🔍 Buscar..." oninput="renderMonitor()" style="padding:0.4rem 0.9rem;background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:0.78rem;font-family:inherit;outline:none;width:200px">
     <span style="font-size:0.72rem;color:var(--text-dim)" id="mon-update">—</span>
   </div>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;overflow-x:auto">
