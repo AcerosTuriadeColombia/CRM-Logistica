@@ -525,6 +525,9 @@ tr:hover td { background:rgba(255,255,255,0.015); }
     <div class="tab" id="tab-vehiculos" onclick="switchTab('vehiculos',this)">
       🏗️ Vehículos <span class="tab-badge" id="badge-vehiculos">0</span>
     </div>
+    <div class="tab" id="tab-reset" onclick="switchTab('reset',this)" style="color:var(--red);margin-left:auto">
+      🗑️ Reset
+    </div>
   </div>
 
   <div class="content">
@@ -807,6 +810,38 @@ tr:hover td { background:rgba(255,255,255,0.015); }
     <strong id="toast-title" style="display:block;font-size:0.8rem"></strong>
     <span id="toast-sub" style="font-size:0.72rem;color:var(--text-dim)"></span>
   </div>
+    <!-- ---- PANEL RESET ---- -->
+    <div class="tab-panel" id="panel-reset">
+      <div class="section-header">
+        <div class="section-title" style="color:var(--red)">⚠️ Zona de peligro</div>
+      </div>
+      <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:14px;padding:1.5rem;max-width:600px">
+        <div style="font-size:0.85rem;color:var(--text-mid);margin-bottom:1.25rem;line-height:1.6">
+          Esta acción elimina <strong style="color:var(--text)">permanentemente</strong> todos los registros de pedidos, ítems y estados de Supabase.<br>
+          Los conductores, vendedores y vehículos <strong style="color:var(--text)">no se borran</strong>.<br><br>
+          Úsala al inicio de un nuevo ciclo operativo.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:1.25rem">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.85rem;text-align:center">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--accent)" id="rst-pedidos">—</div>
+            <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Pedidos</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.85rem;text-align:center">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--accent)" id="rst-items">—</div>
+            <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Ítems</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.85rem;text-align:center">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--accent)" id="rst-historial">—</div>
+            <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Historial</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.75rem;align-items:center">
+          <button class="btn btn-ghost btn-sm" onclick="cargarResetStats()">🔄 Ver conteo actual</button>
+          <button class="btn btn-danger" onclick="ejecutarReset()" style="margin-left:auto;padding:0.6rem 1.5rem;font-size:0.85rem">🗑️ Borrar todos los pedidos</button>
+        </div>
+      </div>
+    </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -1551,6 +1586,56 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 document.getElementById('admin-pass').addEventListener('keydown', e => {
   if (e.key === 'Enter') adminLogin();
 });
+
+// ============================================================
+// RESET — Borrar todos los pedidos de Supabase
+// ============================================================
+async function cargarResetStats() {
+  try {
+    const [{ count: cp }, { count: ci }, { count: ch }] = await Promise.all([
+      sb.from('pedidos').select('*', { count: 'exact', head: true }),
+      sb.from('items_pedido').select('*', { count: 'exact', head: true }),
+      sb.from('historial_estados').select('*', { count: 'exact', head: true }),
+    ]);
+    document.getElementById('rst-pedidos').textContent   = cp ?? 0;
+    document.getElementById('rst-items').textContent     = ci ?? 0;
+    document.getElementById('rst-historial').textContent = ch ?? 0;
+  } catch(e) {
+    showToast('❌', 'Error', e.message || 'No se pudo obtener el conteo');
+  }
+}
+
+async function ejecutarReset() {
+  const confirmMsg = '⚠️ ADVERTENCIA\n\nEsto borrará PERMANENTEMENTE todos los pedidos, ítems y estados de Supabase.\n\nEscribe CONFIRMAR para continuar:';
+  const input = prompt(confirmMsg);
+  if (input !== 'CONFIRMAR') {
+    if (input !== null) alert('Operación cancelada. Debes escribir exactamente: CONFIRMAR');
+    return;
+  }
+
+  showToast('⏳', 'Borrando...', 'Eliminando registros de Supabase');
+
+  try {
+    // Delete in order: historial_estados → items_pedido → pedidos
+    const { error: e1 } = await sb.from('historial_estados').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (e1) throw e1;
+    const { error: e2 } = await sb.from('items_pedido').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (e2) throw e2;
+    const { error: e3 } = await sb.from('pedidos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (e3) throw e3;
+
+    // Reset counters
+    document.getElementById('rst-pedidos').textContent   = '0';
+    document.getElementById('rst-items').textContent     = '0';
+    document.getElementById('rst-historial').textContent = '0';
+
+    showToast('✅', 'Reset completado', 'Todos los pedidos fueron eliminados');
+  } catch(err) {
+    showToast('❌', 'Error en reset', err.message || 'Revisa la consola');
+    console.error(err);
+  }
+}
+
 </script>
 </body>
 </html>

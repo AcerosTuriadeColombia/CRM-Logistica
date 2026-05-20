@@ -1822,6 +1822,13 @@ function setMonFilter(f, el) {
 }
 
 
+
+function monEliminarPedido(id) {
+  monPedidos = monPedidos.filter(p => p.id !== id);
+  renderMonitorStats();
+  renderMonitor();
+}
+
 function limpiarMonitor() {
   if (!confirm('¿Limpiar el monitor para empezar un nuevo día? Esto solo borra la vista, no afecta los registros en Supabase.')) return;
   monPedidos = [];
@@ -1871,6 +1878,7 @@ function renderMonitor() {
       <td style="padding:0.85rem"><div style="display:flex;gap:0.35rem">
         <button title="Ubicación" onclick="monVerUbicacion('${p.id}')" style="width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:0.82rem;opacity:${tieneGps?1:0.4}">📍</button>
         <button title="Remisión" onclick="monVerRemision('${p.foto_remision_url||''}')" style="width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:0.82rem;opacity:${tieneRem?1:0.4}">📄</button>
+        <button title="Eliminar de la vista" onclick="monEliminarPedido('${p.id}')" style="width:28px;height:28px;border-radius:7px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);cursor:pointer;font-size:0.82rem;color:var(--red)">✕</button>
       </div></td>
     </tr>`;
   }).join('');
