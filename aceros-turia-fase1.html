@@ -99,7 +99,6 @@
 .mon-filter.active { background:rgba(249,115,22,0.12)!important;border-color:rgba(249,115,22,0.3)!important;color:var(--accent)!important; }
 </style>
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root {
   --bg: #0f1117;
@@ -1018,97 +1017,94 @@ function readExcel(file) {
   reader.readAsArrayBuffer(file);
 }
 
-// Parser específico para el formato de Aceros Turia
-// Columnas: VEHICULO | CLIENTE | VENDEDOR | # PEDIDO | DESCRIPCION ARTICULO | CANTIDAD | KILOS | OBRA | DIRECCION | CIUDAD
+// Parser Aceros Turia
+// Formato Excel: CONDUCTOR | PLACA | TIPO DE VEHICULO | CLIENTE | VENDEDOR | # PEDIDO | DESCRIPCION ARTICULO | CANTIDAD | KILOS | OBRA | DIRECCION | CIUDAD
+// CONDUCTOR/PLACA/TIPO pueden venir vacíos — el supervisor los asigna en la UI
 function parseAcerosTuriaFormat(rows) {
-  const vehicles = {};
-  let currentVehicle = null;
   let headerRow = -1;
 
   // Encontrar fila de encabezado
   for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const rowStr = row.join('|').toUpperCase();
-    if (rowStr.includes('VEHICULO') || rowStr.includes('VEHÍCULO') || rowStr.includes('CLIENTE')) {
+    const rowStr = rows[i].join('|').toUpperCase();
+    if (rowStr.includes('CLIENTE') && rowStr.includes('PEDIDO')) {
       headerRow = i;
       break;
     }
   }
+  if (headerRow < 0) return [];
 
-  // Índices de columnas (detecta por nombre)
+  // Mapear columnas por nombre
   let colMap = {};
-  if (headerRow >= 0) {
-    rows[headerRow].forEach((cell, idx) => {
-      const c = String(cell).toUpperCase().trim();
-      if (c.includes('VEHICULO') || c.includes('VEHÍCULO')) colMap.vehiculo = idx;
-      else if (c === 'CLIENTE') colMap.cliente = idx;
-      else if (c === 'VENDEDOR') colMap.vendedor = idx;
-      else if (c.includes('PEDIDO')) colMap.pedido = idx;
-      else if (c.includes('DESCRIPCION') || c.includes('ARTÍCULO') || c.includes('ARTICULO')) colMap.descripcion = idx;
-      else if (c === 'CANTIDAD') colMap.cantidad = idx;
-      else if (c === 'KILOS') colMap.kilos = idx;
-      else if (c === 'OBRA') colMap.obra = idx;
-      else if (c.includes('DIRECCI')) colMap.direccion = idx;
-      else if (c === 'CIUDAD') colMap.ciudad = idx;
-    });
-  }
+  rows[headerRow].forEach((cell, idx) => {
+    const c = String(cell).toUpperCase().trim();
+    if (c === 'CONDUCTOR')                                          colMap.conductor  = idx;
+    else if (c === 'PLACA')                                         colMap.placa      = idx;
+    else if (c.includes('TIPO'))                                    colMap.tipo       = idx;
+    else if (c === 'CLIENTE')                                       colMap.cliente    = idx;
+    else if (c === 'VENDEDOR')                                      colMap.vendedor   = idx;
+    else if (c.includes('PEDIDO'))                                  colMap.pedido     = idx;
+    else if (c.includes('DESCRIPCION') || c.includes('ARTICULO'))  colMap.descripcion= idx;
+    else if (c === 'CANTIDAD')                                      colMap.cantidad   = idx;
+    else if (c === 'KILOS')                                         colMap.kilos      = idx;
+    else if (c === 'OBRA')                                          colMap.obra       = idx;
+    else if (c.includes('DIRECCI'))                                 colMap.direccion  = idx;
+    else if (c === 'CIUDAD')                                        colMap.ciudad     = idx;
+  });
 
-  // Si no detectó encabezados, usar posiciones por defecto
-  if (Object.keys(colMap).length < 5) {
-    colMap = { vehiculo:0, cliente:1, vendedor:2, pedido:3, descripcion:4, cantidad:5, kilos:6, obra:7, direccion:8, ciudad:9 };
-  }
+  const get = (row, key) => String(row[colMap[key]] ?? '').trim();
 
-  const get = (row, key) => String(row[colMap[key]] || '').trim();
+  const pedidos = [];
 
   for (let i = headerRow + 1; i < rows.length; i++) {
     const row = rows[i];
-    if (!row || row.every(c => c === '' || c === null)) continue;
+    if (!row || row.every(c => c === '' || c === null || c === undefined)) continue;
 
-    const vehicleCell = get(row, 'vehiculo');
     const clienteCell = get(row, 'cliente');
-    const pedidoCell  = get(row, 'pedido');
+    if (!clienteCell || clienteCell.length < 2) continue;
 
-    // ¿Es fila de subtotal? (tiene número en kilos pero no tiene cliente/pedido)
-    const isSubtotal = !clienteCell && !pedidoCell && row.some(c => typeof c === 'number' && c > 100);
-    if (isSubtotal) continue;
-
-    // ¿Es fila de total general?
+    // Saltar filas de totales
     const rowStr = row.join('').toUpperCase();
     if (rowStr.includes('TOTAL KG') || rowStr.includes('TOTAL KILOS')) continue;
 
-    // ¿Cambia el vehículo?
-    if (vehicleCell && vehicleCell.length > 1 && !vehicleCell.match(/^\d+$/)) {
-      currentVehicle = vehicleCell.toUpperCase();
-    }
+    const kilosRaw  = row[colMap.kilos];
+    const kilos     = typeof kilosRaw  === 'number' ? kilosRaw  : parseFloat(String(kilosRaw ).replace(',','.')) || 0;
+    const cantRaw   = row[colMap.cantidad];
+    const cantidad  = typeof cantRaw   === 'number' ? cantRaw   : parseFloat(String(cantRaw  ).replace(',','.')) || 0;
 
-    // ¿Es fila de pedido válida?
-    if (clienteCell && clienteCell.length > 1 && currentVehicle) {
-      if (!vehicles[currentVehicle]) {
-        vehicles[currentVehicle] = { vehicle: currentVehicle, orders: [], totalKg: 0 };
-      }
-
-      const kilosRaw = row[colMap.kilos];
-      const kilos = typeof kilosRaw === 'number' ? kilosRaw : parseFloat(String(kilosRaw).replace(',','.')) || 0;
-      const cantRaw = row[colMap.cantidad];
-      const cantidad = typeof cantRaw === 'number' ? cantRaw : parseFloat(String(cantRaw).replace(',','.')) || 0;
-
-      vehicles[currentVehicle].orders.push({
-        cliente:     clienteCell,
-        vendedor:    get(row, 'vendedor'),
-        pedido:      get(row, 'pedido'),
-        descripcion: get(row, 'descripcion'),
-        cantidad:    cantidad,
-        kilos:       kilos,
-        obra:        get(row, 'obra'),
-        direccion:   get(row, 'direccion'),
-        ciudad:      get(row, 'ciudad'),
-        status:      'pendiente'
-      });
-      vehicles[currentVehicle].totalKg += kilos;
-    }
+    pedidos.push({
+      conductor:   get(row, 'conductor') || null,
+      placa:       get(row, 'placa')     || null,
+      tipo:        get(row, 'tipo')      || null,
+      cliente:     clienteCell,
+      vendedor:    get(row, 'vendedor'),
+      pedido:      get(row, 'pedido'),
+      descripcion: get(row, 'descripcion'),
+      cantidad,
+      kilos,
+      obra:        get(row, 'obra'),
+      direccion:   get(row, 'direccion'),
+      ciudad:      get(row, 'ciudad'),
+      status:      'pendiente'
+    });
   }
 
-  return Object.values(vehicles);
+  // Agrupar por conductor; si viene vacío → grupo SIN ASIGNAR
+  const grouped = {};
+  pedidos.forEach(p => {
+    const key = (p.conductor && p.conductor.length > 1) ? p.conductor.toUpperCase() : '__SIN_ASIGNAR__';
+    if (!grouped[key]) grouped[key] = {
+      vehicle:    key === '__SIN_ASIGNAR__' ? 'SIN ASIGNAR' : key,
+      placa:      p.placa  || null,
+      tipo:       p.tipo   || null,
+      orders:     [],
+      totalKg:    0,
+      sinAsignar: key === '__SIN_ASIGNAR__'
+    };
+    grouped[key].orders.push(p);
+    grouped[key].totalKg += p.kilos;
+  });
+
+  return Object.values(grouped);
 }
 
 // ============================================================
