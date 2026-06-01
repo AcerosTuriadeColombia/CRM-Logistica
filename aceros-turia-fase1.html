@@ -900,6 +900,10 @@ header {
 // ============================================================
 // CLAVES SUPERVISORES
 // ============================================================
+const SUPABASE_URL = 'https://zullhslppokhhswdairh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bGxoc2xwcG9raGhzd2RhaXJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MDU4MDEsImV4cCI6MjA5Mjk4MTgwMX0.NalrI8rLLW3m78dqVGrlmZTdJ_h6zRXzIP2MlM4gVMU';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const CLAVES_SUPERVISOR = {
   'amaga':   'amaga2024',
   'malambo': 'malambo2024'
@@ -948,9 +952,6 @@ function loginFase1() {
     document.getElementById('btn-' + plantaLoginSeleccionada));
   cargarPedidosDelDia();
 }
-const SUPABASE_URL = 'https://zullhslppokhhswdairh.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bGxoc2xwcG9raGhzd2RhaXJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MDU4MDEsImV4cCI6MjA5Mjk4MTgwMX0.NalrI8rLLW3m78dqVGrlmZTdJ_h6zRXzIP2MlM4gVMU';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================================
 // ESTADO GLOBAL
