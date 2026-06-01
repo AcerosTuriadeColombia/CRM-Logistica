@@ -700,19 +700,11 @@ header {
 
   <!-- UPLOAD -->
   <div class="upload-section" id="upload-section">
-    <div class="drop-zone" id="drop-zone"
-      ondragover="handleDragOver(event)"
-      ondragleave="handleDragLeave(event)"
-      ondrop="handleDrop(event)"
-      onclick="document.getElementById('file-input').click()">
-      <span class="drop-icon">📊</span>
-      <div class="drop-title">Arrastra tu Excel de programación aquí</div>
-      <div class="drop-sub">O haz clic para seleccionar el archivo · Formatos: <strong>.xlsx · .xls</strong></div>
-      <button class="btn btn-primary" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
-        Seleccionar archivo
-      </button>
-      <div class="columns-guide">
-        <span class="col-tag">VEHICULO</span>
+    <div class="drop-zone" id="drop-zone" style="cursor:default;padding:1.5rem 2rem">
+      <span class="drop-icon">📋</span>
+      <div class="drop-title">Pega tu programación desde Excel</div>
+      <div class="drop-sub">Selecciona las filas en Excel, copia con <strong>Ctrl+C</strong> y pega aquí con <strong>Ctrl+V</strong></div>
+      <div style="margin-top:1rem;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:0.5rem 1rem;font-size:0.7rem;color:var(--text-dim);display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center">
         <span class="col-tag">CLIENTE</span>
         <span class="col-tag">VENDEDOR</span>
         <span class="col-tag"># PEDIDO</span>
@@ -723,8 +715,14 @@ header {
         <span class="col-tag">DIRECCION</span>
         <span class="col-tag">CIUDAD</span>
       </div>
+      <textarea id="paste-area"
+        placeholder="Pega aquí (Ctrl+V)..."
+        style="margin-top:1rem;width:100%;min-height:80px;background:#111;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.78rem;font-family:monospace;padding:0.75rem;resize:vertical;box-sizing:border-box;outline:none"
+        onpaste="setTimeout(()=>procesarPegado(),50)"></textarea>
+      <button class="btn btn-primary" style="margin-top:0.75rem" onclick="procesarPegado()">
+        ✅ Procesar programación
+      </button>
     </div>
-    <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFile(event)">
   </div>
 
   <!-- STATS -->
@@ -1790,6 +1788,107 @@ async function limpiarMonitor() {
     showToast('❌', 'Error', err.message || 'No se pudo limpiar');
     console.error(err);
   }
+}
+
+
+// ============================================================
+// PEGAR DESDE EXCEL
+// ============================================================
+function procesarPegado() {
+  const textarea = document.getElementById('paste-area');
+  const raw = textarea.value.trim();
+  if (!raw) { showToast('⚠️', 'Sin datos', 'Pega primero el contenido desde Excel'); return; }
+
+  const lines = raw.split('\n').filter(l => l.trim());
+  if (lines.length === 0) return;
+
+  // Detectar si primera línea es encabezado
+  const firstLine = lines[0].toUpperCase();
+  const hasHeader = firstLine.includes('CLIENTE') || firstLine.includes('PEDIDO') || firstLine.includes('CONDUCTOR');
+  const dataLines = hasHeader ? lines.slice(1) : lines;
+
+  // Detectar columnas desde encabezado o usar orden por defecto
+  // Orden por defecto del Excel de Aceros Turia:
+  // CONDUCTOR | PLACA | TIPO | CLIENTE | VENDEDOR | # PEDIDO | DESCRIPCION | CANTIDAD | KILOS | OBRA | DIRECCION | CIUDAD
+  let colMap = { conductor:0, placa:1, tipo:2, cliente:3, vendedor:4, pedido:5, descripcion:6, cantidad:7, kilos:8, obra:9, direccion:10, ciudad:11 };
+
+  if (hasHeader) {
+    const headers = lines[0].split('\t');
+    colMap = {};
+    headers.forEach((h, i) => {
+      const c = h.toUpperCase().trim();
+      if (c === 'CONDUCTOR')                                         colMap.conductor  = i;
+      else if (c === 'PLACA')                                        colMap.placa      = i;
+      else if (c.includes('TIPO'))                                   colMap.tipo       = i;
+      else if (c === 'CLIENTE')                                      colMap.cliente    = i;
+      else if (c === 'VENDEDOR')                                     colMap.vendedor   = i;
+      else if (c.includes('PEDIDO'))                                 colMap.pedido     = i;
+      else if (c.includes('DESCRIPCION') || c.includes('ARTICULO')) colMap.descripcion= i;
+      else if (c === 'CANTIDAD')                                     colMap.cantidad   = i;
+      else if (c === 'KILOS')                                        colMap.kilos      = i;
+      else if (c === 'OBRA')                                         colMap.obra       = i;
+      else if (c.includes('DIRECCI'))                                colMap.direccion  = i;
+      else if (c === 'CIUDAD')                                       colMap.ciudad     = i;
+    });
+  }
+
+  const get = (cols, key) => (cols[colMap[key]] || '').trim();
+
+  const pedidos = [];
+  dataLines.forEach(line => {
+    const cols = line.split('\t');
+    if (cols.length < 3) return;
+
+    const cliente = get(cols, 'cliente');
+    if (!cliente || cliente.length < 2) return;
+
+    const kilosRaw   = get(cols, 'kilos');
+    const kilos      = parseFloat(kilosRaw.replace(',', '.')) || 0;
+    const cantRaw    = get(cols, 'cantidad');
+    const cantidad   = parseFloat(cantRaw.replace(',', '.')) || 0;
+
+    pedidos.push({
+      conductor:   get(cols, 'conductor') || null,
+      placa:       get(cols, 'placa')     || null,
+      tipo:        get(cols, 'tipo')      || null,
+      cliente,
+      vendedor:    get(cols, 'vendedor'),
+      pedido:      get(cols, 'pedido'),
+      descripcion: get(cols, 'descripcion'),
+      cantidad,
+      kilos,
+      obra:        get(cols, 'obra'),
+      direccion:   get(cols, 'direccion'),
+      ciudad:      get(cols, 'ciudad'),
+      status:      'pendiente'
+    });
+  });
+
+  if (pedidos.length === 0) {
+    showToast('❌', 'Sin pedidos', 'No se detectaron filas válidas. Verifica que copiaste desde Excel con Ctrl+C');
+    return;
+  }
+
+  // Agrupar por conductor; vacío → SIN ASIGNAR
+  const grouped = {};
+  pedidos.forEach(p => {
+    const key = (p.conductor && p.conductor.length > 1) ? p.conductor.toUpperCase() : '__SIN_ASIGNAR__';
+    if (!grouped[key]) grouped[key] = {
+      vehicle:    key === '__SIN_ASIGNAR__' ? 'SIN ASIGNAR' : key,
+      placa:      p.placa || null,
+      tipo:       p.tipo  || null,
+      orders:     [],
+      totalKg:    0,
+      sinAsignar: key === '__SIN_ASIGNAR__'
+    };
+    grouped[key].orders.push(p);
+    grouped[key].totalKg += p.kilos;
+  });
+
+  const parsed = Object.values(grouped);
+  textarea.value = '';
+  renderData(parsed);
+  showToast('✅', 'Programación cargada', parsed.length + ' grupo(s) · ' + pedidos.length + ' pedidos');
 }
 
 </script>
