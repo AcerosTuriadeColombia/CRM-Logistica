@@ -2093,6 +2093,15 @@ async function guardarProgramacion() {
 }
 
 
+function actualizarBtnAsignar(vi) {
+  var btn = document.getElementById('btn-asignar-' + vi);
+  if (!btn) return;
+  var hay = document.querySelectorAll('.order-chk[data-vi="' + vi + '"]:checked').length > 0;
+  btn.disabled      = !hay;
+  btn.style.opacity = hay ? '1' : '0.4';
+  btn.style.cursor  = hay ? 'pointer' : 'not-allowed';
+}
+
 // Event delegation para checkboxes
 document.addEventListener('change', function(e) {
   if (e.target.classList.contains('order-chk')) {
