@@ -2102,6 +2102,130 @@ function actualizarBtnAsignar(vi) {
   btn.style.cursor  = hay ? 'pointer' : 'not-allowed';
 }
 
+
+// ============================================================
+// ASIGNACIÓN DE VEHÍCULO
+// ============================================================
+var _conductoresCache = null;
+var _vehiculosCache   = null;
+
+function abrirModalAsignar(vi) {
+  window._asignarVi = vi;
+  document.getElementById('modal-asignar').classList.add('open');
+  document.getElementById('modal-asignar-loading').style.display = 'block';
+  document.getElementById('modal-asignar-form').style.display    = 'none';
+  document.getElementById('btn-confirmar-asignar').style.display = 'none';
+
+  Promise.all([
+    _conductoresCache ? Promise.resolve({data: _conductoresCache, error: null}) : sb.from('conductores').select('id, nombre').order('nombre'),
+    _vehiculosCache   ? Promise.resolve({data: _vehiculosCache,   error: null}) : sb.from('vehiculos').select('id, placa, tipo').order('placa')
+  ]).then(function(results) {
+    var rc = results[0], rv = results[1];
+    if (rc.error) throw rc.error;
+    if (rv.error) throw rv.error;
+    _conductoresCache = rc.data || [];
+    _vehiculosCache   = rv.data || [];
+
+    var selC = document.getElementById('ma-conductor');
+    selC.innerHTML = '<option value="">— Seleccionar conductor —</option>';
+    _conductoresCache.forEach(function(c) {
+      var o = document.createElement('option');
+      o.value = c.id; o.textContent = c.nombre;
+      selC.appendChild(o);
+    });
+
+    var selV = document.getElementById('ma-vehiculo');
+    selV.innerHTML = '<option value="">— Seleccionar vehículo —</option>';
+    _vehiculosCache.forEach(function(v) {
+      var o = document.createElement('option');
+      o.value = v.id;
+      o.textContent = v.placa + (v.tipo ? ' · ' + v.tipo : '');
+      o.dataset.tipo  = v.tipo  || '';
+      o.dataset.placa = v.placa || '';
+      selV.appendChild(o);
+    });
+
+    selV.onchange = function() {
+      document.getElementById('ma-tipo').value = this.options[this.selectedIndex].dataset.tipo || '';
+    };
+
+    document.getElementById('modal-asignar-loading').style.display = 'none';
+    document.getElementById('modal-asignar-form').style.display    = 'flex';
+    document.getElementById('btn-confirmar-asignar').style.display = 'inline-block';
+  }).catch(function(err) {
+    document.getElementById('modal-asignar-loading').textContent = '❌ Error: ' + (err.message || err);
+  });
+}
+
+function cerrarModalAsignar() {
+  document.getElementById('modal-asignar').classList.remove('open');
+}
+
+function confirmarAsignacion() {
+  var selC = document.getElementById('ma-conductor');
+  var selV = document.getElementById('ma-vehiculo');
+  var conductorNom = selC.options[selC.selectedIndex] ? selC.options[selC.selectedIndex].textContent : '';
+  var vehiculoOpt  = selV.options[selV.selectedIndex];
+  var placa = vehiculoOpt ? vehiculoOpt.dataset.placa || '' : '';
+  var tipo  = vehiculoOpt ? vehiculoOpt.dataset.tipo  || '' : '';
+
+  if (!selC.value || !selV.value) { alert('Selecciona conductor y vehículo.'); return; }
+
+  var vi = window._asignarVi;
+  var grupo = allData[vi];
+  var checked = Array.prototype.slice.call(document.querySelectorAll('.order-chk[data-vi="' + vi + '"]:checked'));
+  if (!checked.length) { alert('Selecciona al menos un pedido.'); return; }
+
+  var selectedOis = {};
+  checked.forEach(function(c) { selectedOis[parseInt(c.dataset.oi)] = true; });
+
+  var selectedOrders = grupo.orders.filter(function(_, i) { return selectedOis[i]; });
+  var remainingOrders = grupo.orders.filter(function(_, i) { return !selectedOis[i]; });
+  var vNom = conductorNom.toUpperCase();
+
+  selectedOrders.forEach(function(o) { o.conductor = vNom; o.placa = placa.toUpperCase(); o.tipo = tipo.toUpperCase(); });
+
+  var newGroup = {
+    vehicle: vNom, placa: placa.toUpperCase(), tipo: tipo.toUpperCase(),
+    orders: selectedOrders,
+    totalKg: selectedOrders.reduce(function(a, o) { return a + o.kilos; }, 0),
+    sinAsignar: false
+  };
+  vehicleStatus[vNom] = 'pendiente';
+
+  if (remainingOrders.length > 0) {
+    grupo.orders  = remainingOrders;
+    grupo.totalKg = remainingOrders.reduce(function(a, o) { return a + o.kilos; }, 0);
+    allData = allData.filter(function(v) { return v !== grupo; });
+    allData.push(newGroup);
+    allData.push(grupo);
+  } else {
+    delete vehicleStatus['SIN ASIGNAR'];
+    allData = allData.filter(function(v) { return v !== grupo; });
+    allData.push(newGroup);
+  }
+
+  cerrarModalAsignar();
+  renderVehicles(allData);
+  updateStats(allData);
+  showToast('✅', 'Vehículo asignado', selectedOrders.length + ' pedidos → ' + vNom + ' · ' + placa);
+}
+
+function borrarPedidoLocal(vi, oi) {
+  if (!confirm('¿Eliminar este pedido de la programación?')) return;
+  var grupo = allData[vi];
+  if (!grupo) return;
+  grupo.totalKg -= grupo.orders[oi] ? grupo.orders[oi].kilos : 0;
+  grupo.orders.splice(oi, 1);
+  if (grupo.orders.length === 0) {
+    allData.splice(vi, 1);
+    delete vehicleStatus[grupo.vehicle];
+  }
+  renderVehicles(allData);
+  updateStats(allData);
+  showToast('🗑️', 'Pedido eliminado', 'Removido de la programación');
+}
+
 // Event delegation para checkboxes
 document.addEventListener('change', function(e) {
   if (e.target.classList.contains('order-chk')) {
