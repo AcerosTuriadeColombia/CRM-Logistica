@@ -1345,7 +1345,7 @@ function renderVehicles(data) {
           asignarBtn +
           '<div class="vs-item"><div class="vs-val">' + v.orders.length + '</div><div class="vs-label">Pedidos</div></div>' +
           '<div class="vs-item"><div class="vs-val">' + v.totalKg.toLocaleString('es-CO') + ' kg</div><div class="vs-label">Carga</div></div>' +
-          '<div><select class="status-select" onchange="changeStatus(event,'' + v.vehicle + '')" onclick="event.stopPropagation()">' +
+          '<div><select class="status-select" onchange="changeStatus(event,\'' + v.vehicle + '\')" onclick="event.stopPropagation()">' +
             '<option value="pendiente"' + (status==='pendiente'?' selected':'') + '>⏳ En planta</option>' +
             '<option value="en-ruta"' + (status==='en-ruta'?' selected':'') + '>🚛 En ruta</option>' +
             '<option value="completado"' + (status==='completado'?' selected':'') + '>✅ Completado</option>' +
