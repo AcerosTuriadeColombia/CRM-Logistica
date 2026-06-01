@@ -946,6 +946,7 @@ function loginFase1() {
   // Preseleccionar la planta
   setPlanta(plantaLoginSeleccionada,
     document.getElementById('btn-' + plantaLoginSeleccionada));
+  cargarPedidosDelDia();
 }
 const SUPABASE_URL = 'https://zullhslppokhhswdairh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bGxoc2xwcG9raGhzd2RhaXJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MDU4MDEsImV4cCI6MjA5Mjk4MTgwMX0.NalrI8rLLW3m78dqVGrlmZTdJ_h6zRXzIP2MlM4gVMU';
@@ -973,7 +974,6 @@ let plantaSeleccionada = null; // 'amaga' | 'malambo'
 
 function setPlanta(planta, btn) {
   plantaSeleccionada = planta;
-  cargarPedidosDelDia();
   document.getElementById('btn-amaga').style.background = planta === 'amaga' ? 'rgba(249,115,22,0.15)' : 'var(--surface2)';
   document.getElementById('btn-amaga').style.borderColor = planta === 'amaga' ? 'rgba(249,115,22,0.4)' : 'var(--border2)';
   document.getElementById('btn-amaga').style.color = planta === 'amaga' ? 'var(--accent)' : 'var(--text-mid)';
