@@ -900,10 +900,6 @@ header {
 // ============================================================
 // CLAVES SUPERVISORES
 // ============================================================
-const SUPABASE_URL = 'https://zullhslppokhhswdairh.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bGxoc2xwcG9raGhzd2RhaXJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MDU4MDEsImV4cCI6MjA5Mjk4MTgwMX0.NalrI8rLLW3m78dqVGrlmZTdJ_h6zRXzIP2MlM4gVMU';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 const CLAVES_SUPERVISOR = {
   'amaga':   'amaga2024',
   'malambo': 'malambo2024'
@@ -952,6 +948,9 @@ function loginFase1() {
     document.getElementById('btn-' + plantaLoginSeleccionada));
   cargarPedidosDelDia();
 }
+const SUPABASE_URL = 'https://zullhslppokhhswdairh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1bGxoc2xwcG9raGhzd2RhaXJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MDU4MDEsImV4cCI6MjA5Mjk4MTgwMX0.NalrI8rLLW3m78dqVGrlmZTdJ_h6zRXzIP2MlM4gVMU';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================================
 // ESTADO GLOBAL
@@ -1293,81 +1292,96 @@ function animateNumber(id, target) {
 }
 
 function renderOrderRow(o, oi, vi, sinAsignar) {
-  const chkCell = sinAsignar
-    ? '<td onclick="event.stopPropagation()" style="width:2rem;text-align:center;vertical-align:middle">' +
-      '<input type="checkbox" class="order-chk" data-vi="' + vi + '" data-oi="' + oi + '" ' +
-      'style="width:1rem;height:1rem;cursor:pointer;accent-color:var(--accent)"></td>'
+  var chk = sinAsignar
+    ? '<td onclick="event.stopPropagation()" style="width:2rem;text-align:center;vertical-align:middle"><input type="checkbox" class="order-chk" data-vi="' + vi + '" data-oi="' + oi + '" style="width:1rem;height:1rem;cursor:pointer;accent-color:var(--accent)"></td>'
     : '';
-  const delBtn = '<td onclick="event.stopPropagation()" style="width:2rem;text-align:center;vertical-align:middle">' +
-    '<button onclick="borrarPedidoLocal(' + vi + ',' + oi + ')" title="Eliminar pedido" ' +
-    'style="width:22px;height:22px;border-radius:5px;border:1px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.08);cursor:pointer;font-size:0.72rem;color:#f87171;line-height:1">✕</button></td>';
-  return '<tr>' +
-    chkCell +
-    '<td><span class="order-num">' + (o.pedido||'—') + '</span></td>' +
-    '<td><div class="client-name">' + o.cliente + '</div><div class="client-vendor">' + o.vendedor + '</div></td>' +
-    '<td><div class="product-name">' + o.descripcion + '</div><div class="product-detail">Cant: ' + o.cantidad + '</div></td>' +
-    '<td class="kg-val" style="color:var(--text-dim)">' + o.cantidad.toLocaleString('es-CO') + '</td>' +
-    '<td class="kg-val" style="color:var(--accent)">' + o.kilos.toLocaleString('es-CO') + '</td>' +
-    '<td><span class="city-badge">' + (o.ciudad||'—') + '</span></td>' +
-    '<td><div style="font-size:0.75rem">' + (o.obra||'—') + '</div><div style="font-size:0.68rem;color:var(--text-dim)">' + (o.direccion||'') + '</div></td>' +
-    delBtn +
-    '</tr>';
+  var del = '<td onclick="event.stopPropagation()" style="width:2rem;text-align:center;vertical-align:middle"><button onclick="borrarPedidoLocal(' + vi + ',' + oi + ')" style="width:22px;height:22px;border-radius:5px;border:1px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.08);cursor:pointer;font-size:0.72rem;color:#f87171">✕</button></td>';
+  return '<tr>'
+    + chk
+    + '<td><span class="order-num">' + (o.pedido || '—') + '</span></td>'
+    + '<td><div class="client-name">' + o.cliente + '</div><div class="client-vendor">' + o.vendedor + '</div></td>'
+    + '<td><div class="product-name">' + o.descripcion + '</div><div class="product-detail">Cant: ' + o.cantidad + '</div></td>'
+    + '<td class="kg-val" style="color:var(--text-dim)">' + o.cantidad.toLocaleString('es-CO') + '</td>'
+    + '<td class="kg-val" style="color:var(--accent)">' + o.kilos.toLocaleString('es-CO') + '</td>'
+    + '<td><span class="city-badge">' + (o.ciudad || '—') + '</span></td>'
+    + '<td><div style="font-size:0.75rem">' + (o.obra || '—') + '</div><div style="font-size:0.68rem;color:var(--text-dim)">' + (o.direccion || '') + '</div></td>'
+    + del
+    + '</tr>';
 }
 
 function renderVehicles(data) {
-  const grid = document.getElementById('vehicles-grid');
-  if (!data.length) {
+  var grid = document.getElementById('vehicles-grid');
+  if (!data || !data.length) {
     grid.innerHTML = '<div class="empty-state"><div class="e-icon">🔍</div><p>No se encontraron resultados</p></div>';
     return;
   }
-  grid.innerHTML = data.map((v, vi) => {
-    const cities = [...new Set(v.orders.map(o => o.ciudad.trim()).filter(Boolean))].join(', ');
-    const status = vehicleStatus[v.vehicle] || 'pendiente';
-    const icon   = v.sinAsignar ? '❓' : getVehicleIcon(v.vehicle);
-    const nameColor = v.sinAsignar ? 'color:var(--yellow)' : '';
-    const asignarBtn = v.sinAsignar
+  var html = '';
+  for (var vi = 0; vi < data.length; vi++) {
+    var v      = data[vi];
+    var cities = [];
+    for (var i = 0; i < v.orders.length; i++) {
+      var c = (v.orders[i].ciudad || '').trim();
+      if (c && cities.indexOf(c) === -1) cities.push(c);
+    }
+    var citiesStr = cities.join(', ') || 'Sin ciudad';
+    var status    = vehicleStatus[v.vehicle] || 'pendiente';
+    var icon      = v.sinAsignar ? '❓' : getVehicleIcon(v.vehicle);
+    var nameStyle = v.sinAsignar ? 'color:var(--yellow)' : '';
+    var nameTxt   = v.vehicle + (v.placa ? ' · ' + v.placa : '');
+
+    var asignarBtn = v.sinAsignar
       ? '<button id="btn-asignar-' + vi + '" class="btn-asignar-vehiculo" disabled style="opacity:0.4;cursor:not-allowed" onclick="event.stopPropagation();abrirModalAsignar(' + vi + ')">🚛 Asignar vehículo</button>'
       : '';
-    const selectTodos = v.sinAsignar
+
+    var selTodos = v.sinAsignar
       ? '<label style="font-size:0.75rem;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;gap:0.3rem;margin-left:auto"><input type="checkbox" class="chk-all" data-vi="' + vi + '" style="accent-color:var(--accent)"> Seleccionar todos</label>'
       : '';
-    const chkHeader = v.sinAsignar ? '<th style="width:2rem"></th>' : '';
 
-    return '<div class="vehicle-card" id="vc-' + vi + '">' +
-      '<div class="vehicle-header" onclick="toggleVehicle(' + vi + ')">' +
-        '<div class="vehicle-icon">' + icon + '</div>' +
-        '<div style="flex:1">' +
-          '<div class="vehicle-name" style="' + nameColor + '">' + v.vehicle + (v.placa ? ' · ' + v.placa : '') + '</div>' +
-          '<div class="vehicle-meta">' + v.orders.length + ' pedido' + (v.orders.length!==1?'s':'') + ' · ' + (cities||'Sin ciudad') + '</div>' +
-        '</div>' +
-        '<div class="vehicle-stats">' +
-          asignarBtn +
-          '<div class="vs-item"><div class="vs-val">' + v.orders.length + '</div><div class="vs-label">Pedidos</div></div>' +
-          '<div class="vs-item"><div class="vs-val">' + v.totalKg.toLocaleString('es-CO') + ' kg</div><div class="vs-label">Carga</div></div>' +
-          '<div><select class="status-select" onchange="changeStatus(event,\'' + v.vehicle + '\')" onclick="event.stopPropagation()">' +
-            '<option value="pendiente"' + (status==='pendiente'?' selected':'') + '>⏳ En planta</option>' +
-            '<option value="en-ruta"' + (status==='en-ruta'?' selected':'') + '>🚛 En ruta</option>' +
-            '<option value="completado"' + (status==='completado'?' selected':'') + '>✅ Completado</option>' +
-            '<option value="novedad"' + (status==='novedad'?' selected':'') + '>⚠️ Novedad</option>' +
-          '</select></div>' +
-        '</div>' +
-        '<span class="chevron">▼</span>' +
-      '</div>' +
-      '<div class="orders-wrap">' +
-        '<table class="orders-table"><thead><tr>' +
-          chkHeader +
-          '<th># Pedido</th><th>Cliente / Vendedor</th><th>Artículo</th><th>Cant.</th><th>Kilos</th><th>Ciudad</th><th>Obra / Dirección</th><th style="width:2rem"></th>' +
-        '</tr></thead>' +
-        '<tbody>' + v.orders.map((o,oi) => renderOrderRow(o,oi,vi,v.sinAsignar)).join('') + '</tbody>' +
-        '</table>' +
-        '<div class="vehicle-footer" style="flex-wrap:wrap;gap:0.5rem">' +
-          '<span class="total-label">Total carga:</span>' +
-          '<span class="total-value">' + v.totalKg.toLocaleString('es-CO') + ' kg</span>' +
-          selectTodos +
-        '</div>' +
-      '</div>' +
-    '</div>';
-  }).join('');
+    var chkHeader = v.sinAsignar ? '<th style="width:2rem"></th>' : '';
+
+    var rows = '';
+    for (var oi = 0; oi < v.orders.length; oi++) {
+      rows += renderOrderRow(v.orders[oi], oi, vi, v.sinAsignar);
+    }
+
+    var selOpts = [
+      ['pendiente', '⏳ En planta'],
+      ['en-ruta',   '🚛 En ruta'],
+      ['completado','✅ Completado'],
+      ['novedad',   '⚠️ Novedad']
+    ].map(function(opt) {
+      return '<option value="' + opt[0] + '"' + (status === opt[0] ? ' selected' : '') + '>' + opt[1] + '</option>';
+    }).join('');
+
+    html += '<div class="vehicle-card" id="vc-' + vi + '">'
+      + '<div class="vehicle-header" onclick="toggleVehicle(' + vi + ')">'
+        + '<div class="vehicle-icon">' + icon + '</div>'
+        + '<div style="flex:1">'
+          + '<div class="vehicle-name" style="' + nameStyle + '">' + nameTxt + '</div>'
+          + '<div class="vehicle-meta">' + v.orders.length + ' pedido' + (v.orders.length !== 1 ? 's' : '') + ' · ' + citiesStr + '</div>'
+        + '</div>'
+        + '<div class="vehicle-stats">'
+          + asignarBtn
+          + '<div class="vs-item"><div class="vs-val">' + v.orders.length + '</div><div class="vs-label">Pedidos</div></div>'
+          + '<div class="vs-item"><div class="vs-val">' + v.totalKg.toLocaleString('es-CO') + ' kg</div><div class="vs-label">Carga</div></div>'
+          + '<div><select class="status-select" onclick="event.stopPropagation()" onchange="changeStatus(event,' + "'" + v.vehicle + "'" + ')">' + selOpts + '</select></div>'
+        + '</div>'
+        + '<span class="chevron">▼</span>'
+      + '</div>'
+      + '<div class="orders-wrap">'
+        + '<table class="orders-table">'
+          + '<thead><tr>' + chkHeader + '<th># Pedido</th><th>Cliente / Vendedor</th><th>Artículo</th><th>Cant.</th><th>Kilos</th><th>Ciudad</th><th>Obra / Dirección</th><th style="width:2rem"></th></tr></thead>'
+          + '<tbody>' + rows + '</tbody>'
+        + '</table>'
+        + '<div class="vehicle-footer" style="flex-wrap:wrap;gap:0.5rem">'
+          + '<span class="total-label">Total carga:</span>'
+          + '<span class="total-value">' + v.totalKg.toLocaleString('es-CO') + ' kg</span>'
+          + selTodos
+        + '</div>'
+      + '</div>'
+    + '</div>';
+  }
+  grid.innerHTML = html;
 }
 
 function getVehicleIcon(name) {
@@ -2085,15 +2099,16 @@ document.addEventListener('change', function(e) {
     actualizarBtnAsignar(parseInt(e.target.dataset.vi));
   }
   if (e.target.classList.contains('chk-all')) {
-    const vi = parseInt(e.target.dataset.vi);
-    document.querySelectorAll('.order-chk[data-vi="' + vi + '"]').forEach(c => c.checked = e.target.checked);
+    var vi = parseInt(e.target.dataset.vi);
+    var chks = document.querySelectorAll('.order-chk[data-vi="' + vi + '"]');
+    for (var i = 0; i < chks.length; i++) chks[i].checked = e.target.checked;
     actualizarBtnAsignar(vi);
   }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-  const m = document.getElementById('modal-asignar');
-  if (m) m.addEventListener('click', e => { if (e.target===m) cerrarModalAsignar(); });
+document.addEventListener('DOMContentLoaded', function() {
+  var m = document.getElementById('modal-asignar');
+  if (m) m.addEventListener('click', function(e) { if (e.target === m) cerrarModalAsignar(); });
 });
 </script>
 </body>
