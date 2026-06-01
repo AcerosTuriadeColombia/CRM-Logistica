@@ -198,7 +198,7 @@ header {
   );
 }
 
-.drop-zone:hover, .drop-zone.drag-over {
+.drop-zone.drag-over {
   border-color: var(--accent);
   background: linear-gradient(135deg, rgba(249,115,22,0.08) 0%, rgba(251,146,60,0.04) 100%);
 }
@@ -700,7 +700,7 @@ header {
 
   <!-- UPLOAD -->
   <div class="upload-section" id="upload-section">
-    <div class="drop-zone" id="drop-zone" style="cursor:default;padding:1.5rem 2rem">
+    <div class="drop-zone" id="drop-zone" style="cursor:default;padding:1.5rem 2rem" ondragover="event.preventDefault()" ondrop="event.preventDefault()">
       <span class="drop-icon">📋</span>
       <div class="drop-title">Pega tu programación desde Excel</div>
       <div class="drop-sub">Selecciona las filas en Excel, copia con <strong>Ctrl+C</strong> y pega aquí con <strong>Ctrl+V</strong></div>
@@ -717,8 +717,10 @@ header {
       </div>
       <textarea id="paste-area"
         placeholder="Pega aquí (Ctrl+V)..."
-        style="margin-top:1rem;width:100%;min-height:80px;background:#111;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.78rem;font-family:monospace;padding:0.75rem;resize:vertical;box-sizing:border-box;outline:none"
-        onpaste="setTimeout(()=>procesarPegado(),50)"></textarea>
+        style="margin-top:1rem;width:100%;min-height:80px;background:#111;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.78rem;font-family:monospace;padding:0.75rem;resize:vertical;box-sizing:border-box;outline:none;cursor:text;position:relative;z-index:10"
+        onclick="event.stopPropagation()"
+        onfocus="event.stopPropagation()"
+        onpaste="event.stopPropagation();setTimeout(()=>procesarPegado(),50)"></textarea>
       <button class="btn btn-primary" style="margin-top:0.75rem" onclick="procesarPegado()">
         ✅ Procesar programación
       </button>
