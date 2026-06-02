@@ -2007,8 +2007,6 @@ async function guardarProgramacion() {
   if (!allData.length) { showToast('⚠️', 'Sin datos', 'Agrega pedidos primero'); return; }
   if (!plantaSeleccionada) {
     showToast('⚠️', 'Selecciona la planta', 'Elige Amagá o Malambo antes de guardar');
-    document.getElementById('planta-bar').style.boxShadow = '0 0 0 2px var(--accent)';
-    setTimeout(() => document.getElementById('planta-bar').style.boxShadow = '', 2000);
     return;
   }
 
@@ -2020,64 +2018,65 @@ async function guardarProgramacion() {
   let creados = 0, errores = 0;
 
   for (const vehiculo of allData) {
-    // Agrupar ítems por pedido
+    // Agrupar ítems por # pedido + cliente
     const grupos = {};
     for (const order of vehiculo.orders) {
-      const key = (order.pedido || '') + '|' + order.cliente;
+      const key = (order.pedido || Math.random()) + '|' + order.cliente;
       if (!grupos[key]) grupos[key] = {
-        numero_pedido: order.pedido,
+        numero_pedido: order.pedido || null,
         cliente:       order.cliente,
         vendedor:      order.vendedor,
-        obra:          order.obra,
-        direccion:     order.direccion,
-        ciudad:        order.ciudad,
-        conductor:     order.conductor || null,
-        placa:         order.placa     || null,
+        obra:          order.obra       || null,
+        direccion:     order.direccion  || null,
+        ciudad:        order.ciudad     || null,
+        placa:         order.placa      || null,
         items:         []
       };
       grupos[key].items.push({ descripcion: order.descripcion, cantidad: order.cantidad, kilos: order.kilos });
     }
 
     for (const grupo of Object.values(grupos)) {
-      const totalKilos    = grupo.items.reduce((a,it) => a + it.kilos,    0);
-      const totalCantidad = grupo.items.reduce((a,it) => a + it.cantidad, 0);
+      const totalKilos    = grupo.items.reduce((a,it) => a + (it.kilos    || 0), 0);
+      const totalCantidad = grupo.items.reduce((a,it) => a + (it.cantidad || 0), 0);
 
-      // Buscar vendedor
-      const { data: vendedorData } = await sb.from('vendedores').select('id').ilike('nombre', (grupo.vendedor||'').trim()).single();
-
-      // Buscar vehículo por placa si está asignado
+      // Buscar vehiculo_id por placa
       let vehiculoId = null;
       if (grupo.placa) {
-        const { data: vData } = await sb.from('vehiculos').select('id').ilike('placa', grupo.placa.trim()).single();
-        vehiculoId = vData?.id || null;
+        const { data: vData } = await sb.from('vehiculos').select('id').ilike('placa', grupo.placa.trim()).maybeSingle();
+        vehiculoId = vData ? vData.id : null;
       }
 
-      // Evitar duplicados
-      const dupQuery = sb.from('pedidos').select('id').eq('fecha', hoy).eq('planta', plantaSeleccionada).eq('cliente', grupo.cliente);
-      if (grupo.numero_pedido) dupQuery.eq('numero_pedido', grupo.numero_pedido);
-      const { data: existe } = await dupQuery.single();
-      if (existe) continue;
+      // Buscar vendedor_id por nombre
+      let vendedorId = null;
+      if (grupo.vendedor) {
+        const { data: vend } = await sb.from('vendedores').select('id').ilike('nombre', grupo.vendedor.trim()).maybeSingle();
+        vendedorId = vend ? vend.id : null;
+      }
 
+      // Insertar pedido
       const { data: nuevoPedido, error } = await sb.from('pedidos').insert({
-        numero_pedido:  grupo.numero_pedido || null,
+        numero_pedido:  grupo.numero_pedido,
         fecha:          hoy,
         cliente:        grupo.cliente,
         obra:           grupo.obra,
         direccion:      grupo.direccion,
         ciudad:         grupo.ciudad,
-        vendedor_id:    vendedorData?.id || null,
+        vendedor_id:    vendedorId,
         vehiculo_id:    vehiculoId,
         total_kilos:    totalKilos,
         total_cantidad: totalCantidad,
-        status:         vehiculo.sinAsignar ? 'pendiente' : 'pendiente',
+        status:         'pendiente',
         planta:         plantaSeleccionada
       }).select('id').single();
 
-      if (error) { console.error(error); errores++; continue; }
+      if (error) { console.error('Error pedido:', error); errores++; continue; }
 
-      await sb.from('items_pedido').insert(
+      // Insertar ítems
+      const { error: errorItems } = await sb.from('items_pedido').insert(
         grupo.items.map(it => ({ pedido_id: nuevoPedido.id, descripcion: it.descripcion, cantidad: it.cantidad, kilos: it.kilos }))
       );
+      if (errorItems) console.error('Error items:', errorItems);
+
       creados++;
     }
   }
