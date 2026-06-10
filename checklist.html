@@ -6,6 +6,7 @@
 <title>Checklist de Cargue · Aceros Turia</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {
     --bg:       #0d0d0d;
@@ -443,6 +444,7 @@
 <div class="bottom-bar">
   <button class="btn btn-ghost" onclick="history.back()">← Volver</button>
   <button class="btn btn-accent" onclick="guardarChecklist()">💾 Guardar</button>
+  <button class="btn" id="btn-imagen" onclick="descargarImagen()" style="background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);color:#818cf8">📷 Descargar imagen</button>
   <button class="btn btn-whatsapp" onclick="enviarWhatsApp()">📲 Enviar por WhatsApp</button>
 </div>
 
@@ -773,6 +775,47 @@ function enviarWhatsApp() {
   } else {
     window.open(urlGeneral, '_blank');
   }
+}
+
+// ============================================================
+// DESCARGAR COMO IMAGEN
+// ============================================================
+async function descargarImagen() {
+  var btn = document.getElementById('btn-imagen');
+  btn.textContent = '⏳ Generando...';
+  btn.disabled = true;
+
+  try {
+    // Ocultar bottom bar para la captura
+    var bar = document.querySelector('.bottom-bar');
+    bar.style.display = 'none';
+
+    var canvas = await html2canvas(document.body, {
+      backgroundColor: '#0d0d0d',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+
+    bar.style.display = '';
+
+    // Descargar
+    var link = document.createElement('a');
+    var conductor = vehiculoInfo.conductor || 'checklist';
+    var fecha     = vehiculoInfo.fecha     || new Date().toISOString().split('T')[0];
+    link.download = 'checklist-' + conductor.replace(/\s+/g, '-') + '-' + fecha + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    showToast('📷', 'Imagen descargada — adjúntala en WhatsApp');
+  } catch(err) {
+    document.querySelector('.bottom-bar').style.display = '';
+    showToast('❌', 'Error al generar imagen');
+    console.error(err);
+  }
+
+  btn.textContent = '📷 Descargar imagen';
+  btn.disabled = false;
 }
 
 // ============================================================
