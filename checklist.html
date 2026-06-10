@@ -339,6 +339,9 @@
   <div class="header-title">Checklist de Cargue</div>
 </div>
 
+<div id="locked-banner" style="display:none;background:rgba(34,197,94,0.12);border-bottom:1px solid rgba(34,197,94,0.3);padding:0.75rem 1.5rem;text-align:center;font-size:0.85rem;font-weight:600;color:#4ade80">
+  ✅ Checklist completado y guardado — solo lectura
+</div>
 <div class="container">
 
   <!-- INFO VEHÍCULO -->
@@ -443,9 +446,9 @@
 <!-- BOTTOM BAR -->
 <div class="bottom-bar">
   <button class="btn btn-ghost" onclick="history.back()">← Volver</button>
-  <button class="btn btn-accent" onclick="guardarChecklist()">💾 Guardar</button>
-  <button class="btn" id="btn-imagen" onclick="descargarImagen()" style="background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);color:#818cf8">📷 Descargar imagen</button>
-  <button class="btn btn-whatsapp" onclick="enviarWhatsApp()">📲 Enviar por WhatsApp</button>
+  <button class="btn btn-accent" id="btn-guardar-chk" onclick="guardarChecklist()">💾 Guardar</button>
+  <button class="btn" id="btn-imagen" onclick="descargarImagen()" style="display:none;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);color:#818cf8">📷 Descargar imagen</button>
+  <button class="btn btn-whatsapp" id="btn-wa" onclick="enviarWhatsApp()" style="display:none">📲 Enviar por WhatsApp</button>
 </div>
 
 <!-- TOAST -->
@@ -505,6 +508,12 @@ document.addEventListener('DOMContentLoaded', function() {
   var now = new Date();
   document.getElementById('salida-fecha').value = now.toISOString().split('T')[0];
   document.getElementById('salida-hora').value  = now.toTimeString().slice(0,5);
+
+  // Verificar si ya fue completado
+  var doneKey = 'chk_done_' + placa + '_' + fecha;
+  if (localStorage.getItem(doneKey)) {
+    setTimeout(bloquearChecklist, 500);
+  }
 
   // Cargar pedidos desde Supabase
   cargarPedidos(placa, fecha);
@@ -697,6 +706,37 @@ function limpiarFirma(quien) {
 // ============================================================
 // GUARDAR
 // ============================================================
+function bloquearChecklist() {
+  // Bloquear todos los inputs y checkboxes
+  document.querySelectorAll('input, textarea, select').forEach(function(el) {
+    el.disabled = true;
+    el.style.opacity = '0.6';
+  });
+  // Bloquear checkboxes de pedidos
+  document.querySelectorAll('.check-box').forEach(function(el) {
+    el.style.pointerEvents = 'none';
+    el.style.opacity = '0.6';
+  });
+  // Bloquear items del checklist
+  document.querySelectorAll('.chk-item').forEach(function(el) {
+    el.style.pointerEvents = 'none';
+  });
+  // Bloquear canvas de firma
+  document.querySelectorAll('.firma-canvas').forEach(function(el) {
+    el.style.pointerEvents = 'none';
+    el.style.opacity = '0.6';
+  });
+  // Mostrar banner
+  document.getElementById('locked-banner').style.display = 'block';
+  // Cambiar botones — ocultar guardar, mostrar solo imagen y WA
+  document.getElementById('btn-guardar-chk').style.display = 'none';
+  document.getElementById('btn-imagen').style.display      = 'inline-flex';
+  document.getElementById('btn-wa').style.display          = 'inline-flex';
+  // Marcar en localStorage
+  var key = 'chk_done_' + (vehiculoInfo.placa || '') + '_' + (vehiculoInfo.fecha || '');
+  localStorage.setItem(key, '1');
+}
+
 async function guardarChecklist() {
   var done  = Object.values(checklistState).filter(Boolean).length;
   var total = checklistItems.length;
@@ -704,6 +744,10 @@ async function guardarChecklist() {
   if (done < total) {
     if (!confirm('Hay ' + (total - done) + ' ítems sin completar. ¿Guardar de todas formas?')) return;
   }
+
+  var btn = document.getElementById('btn-guardar-chk');
+  btn.textContent = '⏳ Guardando...';
+  btn.disabled = true;
 
   var data = {
     conductor:    vehiculoInfo.conductor,
@@ -725,10 +769,11 @@ async function guardarChecklist() {
     if (error) throw error;
     showToast('✅', 'Checklist guardado correctamente');
   } catch(err) {
-    // Guardar en localStorage si falla Supabase
     localStorage.setItem('checklist_' + vehiculoInfo.placa + '_' + vehiculoInfo.fecha, JSON.stringify(data));
     showToast('💾', 'Guardado localmente (sin conexión)');
   }
+
+  bloquearChecklist();
 }
 
 // ============================================================
