@@ -525,6 +525,9 @@ tr:hover td { background:rgba(255,255,255,0.015); }
     <div class="tab" id="tab-vehiculos" onclick="switchTab('vehiculos',this)">
       🏗️ Vehículos <span class="tab-badge" id="badge-vehiculos">0</span>
     </div>
+    <div class="tab" id="tab-historial" onclick="switchTab('historial',this)">
+      📋 Historial Checklists
+    </div>
     <div class="tab" id="tab-reset" onclick="switchTab('reset',this)" style="color:var(--red);margin-left:auto">
       🗑️ Reset
     </div>
@@ -819,6 +822,50 @@ tr:hover td { background:rgba(255,255,255,0.015); }
     <strong id="toast-title" style="display:block;font-size:0.8rem"></strong>
     <span id="toast-sub" style="font-size:0.72rem;color:var(--text-dim)"></span>
   </div>
+    <!-- ---- PANEL HISTORIAL CHECKLISTS ---- -->
+    <div class="tab-panel" id="panel-historial">
+      <div class="section-header">
+        <div class="section-title">📋 Historial de Checklists de Cargue</div>
+      </div>
+
+      <!-- Filtros -->
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;align-items:flex-end">
+        <div>
+          <label style="display:block;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem">Desde</label>
+          <input type="date" id="hist-desde" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:0.4rem 0.75rem;font-family:inherit;font-size:0.82rem;outline:none">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem">Hasta</label>
+          <input type="date" id="hist-hasta" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:0.4rem 0.75rem;font-family:inherit;font-size:0.82rem;outline:none">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem">Conductor / Placa</label>
+          <input type="text" id="hist-buscar" placeholder="Buscar..." style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:0.4rem 0.75rem;font-family:inherit;font-size:0.82rem;outline:none;width:180px">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="cargarHistorial()">🔍 Buscar</button>
+      </div>
+
+      <!-- Tabla -->
+      <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:14px;overflow:hidden">
+        <table style="width:100%;border-collapse:collapse;font-size:0.8rem">
+          <thead>
+            <tr style="background:rgba(255,255,255,0.03)">
+              <th style="padding:0.75rem 1rem;text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim);border-bottom:1px solid var(--border2)">Fecha</th>
+              <th style="padding:0.75rem 1rem;text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim);border-bottom:1px solid var(--border2)">Conductor</th>
+              <th style="padding:0.75rem 1rem;text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim);border-bottom:1px solid var(--border2)">Placa</th>
+              <th style="padding:0.75rem 1rem;text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim);border-bottom:1px solid var(--border2)">Salida</th>
+              <th style="padding:0.75rem 1rem;text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim);border-bottom:1px solid var(--border2)">Despachado por</th>
+              <th style="padding:0.75rem 1rem;text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim);border-bottom:1px solid var(--border2)">Checklist</th>
+              <th style="padding:0.75rem 1rem;text-align:center;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim);border-bottom:1px solid var(--border2)">Ver</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-historial">
+            <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-dim)">Selecciona un rango de fechas y busca</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ---- PANEL RESET ---- -->
     <div class="tab-panel" id="panel-reset">
       <div class="section-header">
@@ -1649,6 +1696,141 @@ async function ejecutarResetConfirmado() {
   }
 }
 
+
+// ============================================================
+// HISTORIAL CHECKLISTS
+// ============================================================
+var _historialData = [];
+
+async function cargarHistorial() {
+  var tbody  = document.getElementById('tbody-historial');
+  var desde  = document.getElementById('hist-desde').value;
+  var hasta  = document.getElementById('hist-hasta').value;
+  var buscar = document.getElementById('hist-buscar').value.trim().toLowerCase();
+
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-dim)">⏳ Cargando...</td></tr>';
+
+  try {
+    var query = sb.from('checklists_cargue').select('*').order('fecha', { ascending: false }).limit(200);
+    if (desde) query = query.gte('fecha', desde);
+    if (hasta) query = query.lte('fecha', hasta);
+
+    var { data, error } = await query;
+    if (error) throw error;
+
+    // Filtrar por conductor/placa
+    if (buscar) {
+      data = data.filter(function(r) {
+        return (r.conductor || '').toLowerCase().includes(buscar) ||
+               (r.placa     || '').toLowerCase().includes(buscar);
+      });
+    }
+
+    _historialData = data || [];
+
+    if (!_historialData.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-dim)">Sin resultados</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = _historialData.map(function(r, i) {
+      var done  = r.checklist ? Object.values(r.checklist).filter(Boolean).length : 0;
+      var total = 12;
+      var pct   = Math.round((done / total) * 100);
+      var color = pct === 100 ? '#22c55e' : pct >= 50 ? '#eab308' : '#ef4444';
+      return '<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">'
+        + '<td style="padding:0.65rem 1rem">' + (r.fecha || '—') + '</td>'
+        + '<td style="padding:0.65rem 1rem;font-weight:600">' + (r.conductor || '—') + '</td>'
+        + '<td style="padding:0.65rem 1rem;font-family:monospace;color:var(--accent)">' + (r.placa || '—') + '</td>'
+        + '<td style="padding:0.65rem 1rem">' + (r.salida_hora || '—') + '</td>'
+        + '<td style="padding:0.65rem 1rem">' + (r.despachado_por || '—') + '</td>'
+        + '<td style="padding:0.65rem 1rem"><span style="color:' + color + ';font-weight:600">' + done + '/' + total + '</span> <span style="color:var(--text-dim);font-size:0.72rem">(' + pct + '%)</span></td>'
+        + '<td style="padding:0.65rem 1rem;text-align:center"><button class="btn btn-ghost btn-sm" onclick="verDetalleHistorial(' + i + ')">👁 Ver</button></td>'
+        + '</tr>';
+    }).join('');
+
+  } catch(err) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red)">Error: ' + (err.message || err) + '</td></tr>';
+  }
+}
+
+var CHECKLIST_ITEMS = [
+  'Orden de cargue','Entrega doc cargue a gruero','Verifica mat cargado',
+  'Cuenta mallas / atados','Revisa etiquetas','Toma fotografías',
+  'Envía inf a logística','Calcula y registra peso','Resalta sobre cartilla de FIG',
+  'Compara peso REM con registro','Compara remisiones vs vehículo','Entrega doc a conductor'
+];
+
+function verDetalleHistorial(i) {
+  var r = _historialData[i];
+  if (!r) return;
+
+  var chkHtml = CHECKLIST_ITEMS.map(function(item, idx) {
+    var done = r.checklist && r.checklist[idx];
+    return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.5rem;border-radius:6px;background:' + (done ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.02)') + ';margin-bottom:0.3rem">'
+      + '<span style="color:' + (done ? '#22c55e' : '#666') + ';font-size:0.9rem">' + (done ? '✓' : '○') + '</span>'
+      + '<span style="font-size:0.8rem;color:' + (done ? 'var(--text)' : 'var(--text-dim)') + '">' + item + '</span>'
+      + '</div>';
+  }).join('');
+
+  var firmasHtml = '';
+  if (r.firma_despachador || r.firma_conductor) {
+    firmasHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem">';
+    if (r.firma_despachador) {
+      firmasHtml += '<div><div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;margin-bottom:0.35rem">Despachado por: ' + (r.despachado_por || '') + '</div>'
+        + '<img src="' + r.firma_despachador + '" style="width:100%;border-radius:6px;border:1px solid var(--border2)"></div>';
+    }
+    if (r.firma_conductor) {
+      firmasHtml += '<div><div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;margin-bottom:0.35rem">Conductor: ' + (r.conductor || '') + '</div>'
+        + '<img src="' + r.firma_conductor + '" style="width:100%;border-radius:6px;border:1px solid var(--border2)"></div>';
+    }
+    firmasHtml += '</div>';
+  }
+
+  document.getElementById('hist-detalle-content').innerHTML =
+    '<div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--accent);letter-spacing:1px;margin-bottom:1rem">📋 Checklist · ' + (r.conductor || '') + ' · ' + (r.placa || '') + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1.5rem;margin-bottom:1rem;font-size:0.82rem">'
+      + '<div><span style="color:var(--text-dim)">Fecha: </span><strong>' + (r.fecha || '—') + '</strong></div>'
+      + '<div><span style="color:var(--text-dim)">Hora salida: </span><strong>' + (r.salida_hora || '—') + '</strong></div>'
+      + '<div><span style="color:var(--text-dim)">Tipo: </span><strong>' + (r.tipo || '—') + '</strong></div>'
+      + '<div><span style="color:var(--text-dim)">Pedidos verificados: </span><strong>' + (r.pedidos_verificados || 0) + '</strong></div>'
+    + '</div>'
+    + (r.comentario ? '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:0.65rem;margin-bottom:1rem;font-size:0.82rem;color:var(--text-mid)">💬 ' + r.comentario + '</div>' : '')
+    + '<div style="font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem">Lista de chequeo</div>'
+    + chkHtml
+    + firmasHtml;
+
+  document.getElementById('modal-historial-detalle').style.display = 'flex';
+}
+
+function cerrarDetalleHistorial() {
+  document.getElementById('modal-historial-detalle').style.display = 'none';
+}
+
+async function descargarImagenHistorial() {
+  if (typeof html2canvas === 'undefined') {
+    // Cargar html2canvas si no está
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    document.head.appendChild(s);
+    await new Promise(function(res) { s.onload = res; });
+  }
+  var el = document.getElementById('hist-detalle-content');
+  var canvas = await html2canvas(el, { backgroundColor: '#141414', scale: 2 });
+  var link = document.createElement('a');
+  link.download = 'checklist-historial.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// Inicializar fechas por defecto (últimos 7 días)
+(function() {
+  var hoy    = new Date();
+  var hace7  = new Date(hoy); hace7.setDate(hace7.getDate() - 7);
+  document.getElementById('hist-desde') && (document.getElementById('hist-desde').value = hace7.toISOString().split('T')[0]);
+  document.getElementById('hist-hasta') && (document.getElementById('hist-hasta').value = hoy.toISOString().split('T')[0]);
+})();
+
 </script>
 
 <!-- MODAL CONFIRM RESET -->
@@ -1665,6 +1847,19 @@ async function ejecutarResetConfirmado() {
     <div style="display:flex;gap:0.75rem;justify-content:flex-end">
       <button onclick="cerrarModalReset()" style="padding:0.55rem 1.25rem;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text-mid);cursor:pointer;font-family:inherit;font-size:0.85rem">Cancelar</button>
       <button id="btn-reset-exec" onclick="ejecutarResetConfirmado()" disabled style="opacity:0.4;padding:0.55rem 1.5rem;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);border-radius:8px;color:var(--red);cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:700">🗑️ Borrar todo</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL DETALLE CHECKLIST -->
+<div id="modal-historial-detalle" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto">
+  <div style="background:#141414;border:1px solid rgba(255,255,255,0.08);border-radius:14px;width:100%;max-width:680px;padding:1.5rem;position:relative;margin:auto">
+    <button onclick="cerrarDetalleHistorial()" style="position:absolute;top:1rem;right:1rem;background:transparent;border:none;color:var(--text-dim);cursor:pointer;font-size:1.1rem">✕</button>
+    <div id="hist-detalle-content"><!-- filled by JS --></div>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.25rem">
+      <button class="btn btn-ghost btn-sm" onclick="cerrarDetalleHistorial()">Cerrar</button>
+      <button class="btn btn-primary btn-sm" onclick="descargarImagenHistorial()">📷 Descargar imagen</button>
     </div>
   </div>
 </div>
