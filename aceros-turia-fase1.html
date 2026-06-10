@@ -1329,9 +1329,12 @@ function renderVehicles(data) {
     var nameStyle = v.sinAsignar ? 'color:var(--yellow)' : '';
     var nameTxt   = v.vehicle + (v.placa ? ' · ' + v.placa : '');
 
-    var asignarBtn = v.sinAsignar
-      ? '<button id="btn-asignar-' + vi + '" class="btn-asignar-vehiculo" disabled style="opacity:0.4;cursor:not-allowed" onclick="event.stopPropagation();abrirModalAsignar(' + vi + ')">🚛 Asignar vehículo</button>'
-      : '';
+    var asignarBtn;
+    if (v.sinAsignar) {
+      asignarBtn = '<button id="btn-asignar-' + vi + '" class="btn-asignar-vehiculo" disabled style="opacity:0.4;cursor:not-allowed" onclick="event.stopPropagation();abrirModalAsignar(' + vi + ')">🚛 Asignar vehículo</button>';
+    } else {
+      asignarBtn = '<button onclick="event.stopPropagation();abrirChecklist(' + vi + ')" style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#4ade80;border-radius:6px;padding:0.3rem 0.9rem;font-weight:600;cursor:pointer;font-size:0.78rem">📋 Checklist</button>';
+    }
 
     var selTodos = v.sinAsignar
       ? '<label style="font-size:0.75rem;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;gap:0.3rem;margin-left:auto"><input type="checkbox" class="chk-all" data-vi="' + vi + '" style="accent-color:var(--accent)"> Seleccionar todos</label>'
@@ -2223,6 +2226,28 @@ function borrarPedidoLocal(vi, oi) {
   renderVehicles(allData);
   updateStats(allData);
   showToast('🗑️', 'Pedido eliminado', 'Removido de la programación');
+}
+
+
+// ============================================================
+// ABRIR CHECKLIST
+// ============================================================
+function abrirChecklist(vi) {
+  var v = allData[vi];
+  if (!v) return;
+  var hoy = new Date().toISOString().split('T')[0];
+
+  // Guardar pedidos en localStorage para que checklist.html los lea
+  localStorage.setItem('checklist_pedidos', JSON.stringify(v.orders));
+
+  var params = new URLSearchParams({
+    conductor: v.vehicle  || '',
+    placa:     v.placa    || '',
+    tipo:      v.tipo     || '',
+    fecha:     hoy,
+    wa:        v.whatsapp || ''
+  });
+  window.open('checklist.html?' + params.toString(), '_blank');
 }
 
 // Event delegation para checkboxes
